@@ -100,7 +100,7 @@ export function useSpotifyAuth() {
       });
 
       // Protection contre les appels multiples ou prématurés
-      if (!mounted || !isAuthenticated || albums.length === 0) {
+      if (!mounted || !isAuthenticated) {
         console.log("❌ [AUTH-HOOK] Not ready - clearing playlist");
         setExistingPlaylist(null);
         return null;
@@ -173,6 +173,13 @@ export function useSpotifyAuth() {
         "🔐 [AUTH] User not authenticated, clearing existingPlaylist"
       );
       setExistingPlaylist(null);
+    } else {
+      console.log(
+        "🔐 [AUTH] User authenticated, checking for existing playlist"
+      );
+      // Vérifier automatiquement s'il existe une playlist après connexion
+      // On va laisser les composants qui ont accès aux albums faire cette vérification
+      // car ils ont les données nécessaires
     }
   }, [isAuthenticated, mounted]);
 

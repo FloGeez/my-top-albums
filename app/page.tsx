@@ -61,6 +61,7 @@ import { SpotifyAuth } from "@/components/spotify-auth";
 
 import { SpotifySaveButton } from "@/components/spotify-save-button";
 import { useTheme } from "next-themes";
+import { useSpotifyAuth } from "@/hooks/use-spotify-auth";
 
 export default function MusicApp() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -85,6 +86,7 @@ export default function MusicApp() {
   const [isCheckingPlaylist, setIsCheckingPlaylist] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { isAuthenticated, checkExistingPlaylist } = useSpotifyAuth();
 
   // Fonction utilitaire pour mettre à jour l'URL avec une playlist
   const updateUrlWithPlaylist = (playlistId: string) => {
@@ -344,13 +346,31 @@ export default function MusicApp() {
             existingPlaylist.id
           );
 
-          // Notification discrète
-          toast({
-            title: "🔗 Playlist trouvée",
-            description:
-              "Votre playlist existante a été détectée et l'URL mise à jour",
-            duration: 3000,
-          });
+          // Charger les albums depuis la playlist trouvée
+          console.log("🔄 [SPOTIFY] Loading albums from found playlist");
+          const playlist = await spotifyService.getPublicPlaylist(
+            existingPlaylist.id
+          );
+          if (playlist) {
+            const topData = spotifyService.parsePlaylistMetadata(playlist);
+            if (topData && topData.albums) {
+              const albums = await spotifyService.loadAlbumsFromMetadata(
+                topData.albums
+              );
+              console.log(
+                "✅ [SPOTIFY] Loaded",
+                albums.length,
+                "albums from playlist"
+              );
+              setTop50(albums);
+              setManualOrder(albums);
+              toast({
+                title: "🔗 Playlist chargée !",
+                description: `${albums.length} albums chargés depuis votre playlist existante`,
+                duration: 3000,
+              });
+            }
+          }
         } else {
           console.log("❌ [SPOTIFY] No existing playlist found");
         }
@@ -385,6 +405,79 @@ export default function MusicApp() {
       console.log("⏸️ [SPOTIFY] Not ready for playlist check yet");
     }
   }, [mounted, hasCheckedExistingPlaylist, isInitializing, toast]); // Retiré top50 des dépendances
+
+  // Vérifier automatiquement l'existence d'une playlist quand l'utilisateur se connecte
+  useEffect(() => {
+    if (mounted && isAuthenticated && !hasCheckedExistingPlaylist) {
+      console.log(
+        "🔍 [AUTH-CHECK] User connected, checking for existing playlist"
+      );
+      const checkPlaylistAfterAuth = async () => {
+        try {
+          // Si pas d'albums dans le top50, on vérifie quand même les playlists existantes
+          const albumsToCheck = top50.length > 0 ? top50 : [];
+          const existingPlaylist = await checkExistingPlaylist(albumsToCheck);
+          if (existingPlaylist) {
+            console.log(
+              "✅ [AUTH-CHECK] Found existing playlist after auth:",
+              existingPlaylist.id
+            );
+            updateUrlWithPlaylist(existingPlaylist.id);
+
+            // Charger les albums depuis la playlist trouvée
+            console.log("🔄 [AUTH-CHECK] Loading albums from found playlist");
+            const playlist = await spotifyService.getPublicPlaylist(
+              existingPlaylist.id
+            );
+            if (playlist) {
+              const topData = spotifyService.parsePlaylistMetadata(playlist);
+              if (topData && topData.albums) {
+                const albums = await spotifyService.loadAlbumsFromMetadata(
+                  topData.albums
+                );
+                console.log(
+                  "✅ [AUTH-CHECK] Loaded",
+                  albums.length,
+                  "albums from playlist"
+                );
+                setTop50(albums);
+                setManualOrder(albums);
+                toast({
+                  title: "🔗 Playlist chargée !",
+                  description: `${albums.length} albums chargés depuis votre playlist existante`,
+                  duration: 3000,
+                });
+              }
+            }
+          } else {
+            console.log(
+              "❌ [AUTH-CHECK] No existing playlist found after auth"
+            );
+          }
+        } catch (error) {
+          console.error(
+            "❌ [AUTH-CHECK] Error checking playlist after auth:",
+            error
+          );
+        } finally {
+          // Marquer comme vérifié pour éviter les boucles
+          console.log("🏁 [AUTH-CHECK] Marking as checked to prevent loops");
+          setHasCheckedExistingPlaylist(true);
+        }
+      };
+
+      // Délai pour laisser le temps à l'authentification de se stabiliser
+      const timer = setTimeout(checkPlaylistAfterAuth, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    mounted,
+    isAuthenticated,
+    hasCheckedExistingPlaylist,
+    checkExistingPlaylist,
+    updateUrlWithPlaylist,
+    toast,
+  ]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {

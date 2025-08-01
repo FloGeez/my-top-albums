@@ -65,6 +65,34 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
     checkExistingPlaylist,
   ]);
 
+  // Vérifier automatiquement la playlist quand l'utilisateur se connecte via le modal
+  useEffect(() => {
+    if (
+      isOpen &&
+      mounted &&
+      isSpotifyAuthenticated &&
+      albums.length > 0 &&
+      !existingPlaylist &&
+      !isCheckingExisting
+    ) {
+      console.log(
+        "🔍 [SHARE-MODAL] User authenticated in modal, checking playlist"
+      );
+      setIsCheckingExisting(true);
+      checkExistingPlaylist(albums).finally(() => {
+        setIsCheckingExisting(false);
+      });
+    }
+  }, [
+    isOpen,
+    mounted,
+    isSpotifyAuthenticated,
+    albums.length,
+    existingPlaylist,
+    isCheckingExisting,
+    checkExistingPlaylist,
+  ]);
+
   // Générer le texte de partage
   const generateShareText = () => {
     const header = `🎵 Mon Top ${albums.length} Albums\n\n`;
