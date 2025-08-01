@@ -68,7 +68,7 @@ export default function MusicApp() {
   const [searchResults, setSearchResults] = useState<Album[]>([]);
   const [top50, setTop50] = useState<Album[]>([]);
   const [activeTab, setActiveTab] = useState("top50");
-  const [viewMode, setViewMode] = useState<"tabs" | "panels">("tabs"); // Initialisation par défaut à "tabs"
+  // Suppression du state viewMode - on utilise uniquement les classes responsive Tailwind
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -135,23 +135,7 @@ export default function MusicApp() {
 
   // Déterminer le mode de vue par défaut basé sur la taille de l'écran
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        // Mobile breakpoint (md in Tailwind)
-        setViewMode("tabs");
-      } else {
-        setViewMode("panels");
-      }
-    };
-
-    // Set initial view mode
-    handleResize();
-
-    // Add event listener for window resize
-    window.addEventListener("resize", handleResize);
-
-    // Clean up event listener
-    return () => window.removeEventListener("resize", handleResize);
+    // Suppression du useEffect de resize - on utilise uniquement les classes responsive Tailwind
   }, []);
 
   // Charger le top 50 et l'ordre manuel depuis localStorage au démarrage
@@ -744,38 +728,7 @@ export default function MusicApp() {
           {/* Spotify Auth */}
           <SpotifyAuth />
 
-          {/* Toggle View Mode */}
-          {!mounted ? (
-            <ViewModeSkeleton />
-          ) : (
-            <TooltipProvider delayDuration={100}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() =>
-                      setViewMode(viewMode === "tabs" ? "panels" : "tabs")
-                    }
-                    aria-label={
-                      viewMode === "tabs"
-                        ? "Vue en panneaux"
-                        : "Vue par onglets"
-                    }
-                  >
-                    {viewMode === "tabs" ? (
-                      <Columns className="h-5 w-5" />
-                    ) : (
-                      <Layout className="h-5 w-5" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {viewMode === "tabs" ? "Vue en panneaux" : "Vue par onglets"}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+          {/* Suppression du toggle des vues - on utilise uniquement les classes responsive Tailwind */}
 
           {/* Theme Toggle */}
           {mounted && (
@@ -821,10 +774,8 @@ export default function MusicApp() {
           </Alert>
         )}
 
-        {/* Vue par onglets (existante) */}
-        <div
-          className={`${viewMode === "tabs" ? "block" : "hidden"} md:hidden`}
-        >
+        {/* Vue par onglets (mobile uniquement) */}
+        <div className="block md:hidden">
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
@@ -869,7 +820,6 @@ export default function MusicApp() {
                   hasSearched={hasSearched}
                   searchResults={searchResults}
                   handleSearch={handleSearch}
-                  viewMode={viewMode}
                   top50={top50}
                   addToTop50={addToTop50} // Pass the function
                   removeFromTop50={removeFromTop50} // Pass the function
@@ -883,7 +833,6 @@ export default function MusicApp() {
               ) : (
                 <MemoizedTop50Content
                   top50={top50}
-                  viewMode={viewMode}
                   setActiveTab={setActiveTab}
                   sortMode={sortMode}
                   sortDirection={sortDirection}
@@ -906,12 +855,8 @@ export default function MusicApp() {
           </Tabs>
         </div>
 
-        {/* Vue en panneaux (nouvelle) */}
-        <div
-          className={`${
-            viewMode === "panels" ? "block" : "hidden"
-          } hidden md:block`}
-        >
+        {/* Vue en panneaux (desktop uniquement) */}
+        <div className="hidden md:block">
           <ResizablePanelGroup
             direction="horizontal"
             className="min-h-[800px] rounded-lg border"
@@ -942,7 +887,6 @@ export default function MusicApp() {
                 ) : (
                   <MemoizedTop50Content
                     top50={top50}
-                    viewMode={viewMode}
                     setActiveTab={setActiveTab}
                     sortMode={sortMode}
                     sortDirection={sortDirection}
@@ -984,7 +928,6 @@ export default function MusicApp() {
                     hasSearched={hasSearched}
                     searchResults={searchResults}
                     handleSearch={handleSearch}
-                    viewMode={viewMode}
                     top50={top50}
                     addToTop50={addToTop50} // Pass the function
                     removeFromTop50={removeFromTop50} // Pass the function
@@ -1016,7 +959,6 @@ const MemoizedSearchContent = React.memo(function SearchContent({
   hasSearched,
   searchResults,
   handleSearch,
-  viewMode,
   top50,
   addToTop50, // Receive the function
   removeFromTop50, // Receive the function
@@ -1028,7 +970,6 @@ const MemoizedSearchContent = React.memo(function SearchContent({
   hasSearched: boolean;
   searchResults: Album[];
   handleSearch: () => void;
-  viewMode: "tabs" | "panels";
   top50: Album[];
   addToTop50: (album: Album) => void; // Type the function
   removeFromTop50: (albumId: string) => void; // Type the function
@@ -1063,13 +1004,7 @@ const MemoizedSearchContent = React.memo(function SearchContent({
       </div>
 
       {isLoading ? (
-        <div
-          className={`grid gap-4 ${
-            viewMode === "panels"
-              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-              : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-          }`}
-        >
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {Array.from({ length: 8 }).map((_, i) => (
             <AlbumSkeleton key={i} />
           ))}
@@ -1082,13 +1017,7 @@ const MemoizedSearchContent = React.memo(function SearchContent({
           </p>
         </div>
       ) : searchResults.length > 0 ? (
-        <div
-          className={`grid gap-4 ${
-            viewMode === "panels"
-              ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
-              : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-          }`}
-        >
+        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {searchResults.map((album) => (
             <AlbumCard
               key={album.id}
@@ -1114,7 +1043,6 @@ const MemoizedSearchContent = React.memo(function SearchContent({
 // Composant pour le contenu du Top 50
 const MemoizedTop50Content = React.memo(function Top50Content({
   top50,
-  viewMode,
   setActiveTab,
   sortMode,
   sortDirection,
@@ -1133,7 +1061,6 @@ const MemoizedTop50Content = React.memo(function Top50Content({
   getSortTooltipText,
 }: {
   top50: Album[];
-  viewMode: "tabs" | "panels";
   setActiveTab: (tab: string) => void;
   sortMode: "date" | "manual";
   sortDirection: "asc" | "desc";
@@ -1163,9 +1090,7 @@ const MemoizedTop50Content = React.memo(function Top50Content({
             Commencez dès maintenant à rechercher et à ajouter vos albums
             préférés pour créer votre sélection ultime.
           </p>
-          <div
-            className={`${viewMode === "tabs" ? "block" : "hidden"} md:hidden`}
-          >
+          <div className={`md:hidden`}>
             <Button
               onClick={() => setActiveTab("search")}
               size="lg"
@@ -1282,11 +1207,7 @@ const MemoizedTop50Content = React.memo(function Top50Content({
           </div>
 
           <div
-            className={`grid gap-4 ${
-              viewMode === "panels"
-                ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-                : "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8"
-            }`}
+            className={`grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5`}
           >
             {top50.map((album, index) => (
               <CompactRankedAlbumCard
@@ -1557,9 +1478,7 @@ function SearchContentSkeleton() {
   );
 }
 
-function ViewModeSkeleton() {
-  return <div className="h-10 w-10 bg-muted rounded animate-pulse"></div>;
-}
+// Suppression du ViewModeSkeleton - plus nécessaire
 
 function FullscreenView({
   top50,
