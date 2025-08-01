@@ -151,38 +151,40 @@ export function SpotifySaveButton({ albums }: SpotifySaveButtonProps) {
       <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              onClick={handleSave}
-              disabled={isSaving || isCheckingPlaylist || albums.length === 0}
-              variant={
-                isAuthenticated && existingPlaylist ? "default" : "outline"
-              }
-              size="default"
-              className={`gap-2 ${
-                isAuthenticated && existingPlaylist
-                  ? "bg-green-600 hover:bg-green-700"
-                  : ""
-              }`}
-            >
-              {isSaving ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : isCheckingPlaylist ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Music className="w-4 h-4" />
-              )}
-              {isSaving
-                ? "Sauvegarde..."
-                : isCheckingPlaylist
-                ? "Vérification..."
-                : isAuthenticated && existingPlaylist
-                ? "Mettre à jour"
-                : "Sauvegarder"}
-            </Button>
+            <div className="inline-block">
+              <Button
+                onClick={handleSave}
+                disabled={isSaving || isCheckingPlaylist || albums.length === 0}
+                variant={
+                  isAuthenticated && existingPlaylist ? "default" : "outline"
+                }
+                size="default"
+                className={`gap-2 ${
+                  isAuthenticated && existingPlaylist
+                    ? "bg-green-600 hover:bg-green-700"
+                    : ""
+                }`}
+              >
+                {isSaving ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : isCheckingPlaylist ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Music className="w-4 h-4" />
+                )}
+                {isSaving
+                  ? "Sauvegarde..."
+                  : isCheckingPlaylist
+                  ? "Vérification..."
+                  : isAuthenticated && existingPlaylist
+                  ? "Mettre à jour"
+                  : "Sauvegarder"}
+              </Button>
+            </div>
           </TooltipTrigger>
           <TooltipContent>
             {albums.length === 0
-              ? "Ajoutez des albums pour sauvegarder"
+              ? "Ajoutez des albums à votre Top pour sauvegarder"
               : isCheckingPlaylist
               ? "Vérification de votre playlist existante..."
               : !isAuthenticated

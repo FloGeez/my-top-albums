@@ -693,18 +693,24 @@ export default function MusicApp() {
               {mounted && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setIsShareDialogOpen(true)}
-                      variant="default"
-                      size="default"
-                      className="gap-2"
-                      disabled={top50.length === 0}
-                    >
-                      <Share className="w-4 h-4" />
-                      Partager
-                    </Button>
+                    <div className="inline-block">
+                      <Button
+                        onClick={() => setIsShareDialogOpen(true)}
+                        variant="default"
+                        size="default"
+                        className="gap-2"
+                        disabled={top50.length === 0}
+                      >
+                        <Share className="w-4 h-4" />
+                        Partager
+                      </Button>
+                    </div>
                   </TooltipTrigger>
-                  <TooltipContent>Partager votre Top 50</TooltipContent>
+                  <TooltipContent>
+                    {top50.length === 0
+                      ? "Ajoutez des albums à votre Top pour partager"
+                      : "Partager votre Top 50"}
+                  </TooltipContent>
                 </Tooltip>
               )}
             </TooltipProvider>
