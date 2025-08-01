@@ -677,29 +677,20 @@ export default function MusicApp() {
 
           {/* Indicateur de chargement subtil */}
           {!mounted && (
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-4">
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-8 mb-3">
               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
               <span>Chargement...</span>
             </div>
           )}
 
-          {/* Indicateur de vérification de playlist */}
-          {isCheckingPlaylist && <PlaylistCheckSkeleton />}
-
           {/* Barre d'actions principales */}
           <div className="flex items-center justify-center gap-3 mb-4">
             <TooltipProvider delayDuration={100}>
               {/* Bouton Sauvegarder Spotify */}
-              {!mounted ? (
-                <ButtonSkeleton width="w-24" />
-              ) : (
-                <SpotifySaveButton albums={top50} />
-              )}
+              {mounted && <SpotifySaveButton albums={top50} />}
 
               {/* Bouton Partager */}
-              {!mounted ? (
-                <ButtonSkeleton width="w-24" />
-              ) : (
+              {mounted && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -1416,28 +1407,6 @@ function AlbumSkeleton() {
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-function ButtonSkeleton({ width = "w-32" }: { width?: string }) {
-  return <div className={`h-10 bg-muted rounded ${width} animate-pulse`}></div>;
-}
-
-function AuthButtonSkeleton() {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>
-      <div className="h-6 bg-muted rounded w-24 animate-pulse"></div>
-    </div>
-  );
-}
-
-function PlaylistCheckSkeleton() {
-  return (
-    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mb-4">
-      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-      <span>Vérification en cours...</span>
-    </div>
   );
 }
 

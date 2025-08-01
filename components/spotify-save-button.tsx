@@ -26,6 +26,7 @@ interface SpotifySaveButtonProps {
 
 export function SpotifySaveButton({ albums }: SpotifySaveButtonProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [isCheckingPlaylist, setIsCheckingPlaylist] = useState(false);
   const [showExplanationModal, setShowExplanationModal] = useState(false);
   const { toast } = useToast();
   const {
@@ -51,7 +52,10 @@ export function SpotifySaveButton({ albums }: SpotifySaveButtonProps) {
     // Ne vérifier que si toutes les conditions sont remplies ET qu'on n'a pas déjà une playlist
     if (mounted && isAuthenticated && albums.length > 0 && !existingPlaylist) {
       console.log("💾 [SAVE-BTN] Calling checkExistingPlaylist from hook");
-      checkExistingPlaylist(albums);
+      setIsCheckingPlaylist(true);
+      checkExistingPlaylist(albums).finally(() => {
+        setIsCheckingPlaylist(false);
+      });
     } else {
       console.log(
         "💾 [SAVE-BTN] Conditions not met or playlist already exists"
@@ -74,7 +78,16 @@ export function SpotifySaveButton({ albums }: SpotifySaveButtonProps) {
   };
 
   const handleSave = async () => {
+    console.log("💾 [SAVE-BTN] handleSave called:", {
+      isAuthenticated,
+      albumsLength: albums.length,
+      existingPlaylist: existingPlaylist?.id,
+    });
+
     if (!isAuthenticated) {
+      console.log(
+        "💾 [SAVE-BTN] User not authenticated, showing explanation modal"
+      );
       setShowExplanationModal(true);
       return;
     }
@@ -90,6 +103,7 @@ export function SpotifySaveButton({ albums }: SpotifySaveButtonProps) {
 
     setIsSaving(true);
     try {
+      console.log("💾 [SAVE-BTN] Creating/updating playlist...");
       const result = await spotifyService.createOrUpdateTop50Playlist(albums);
 
       // Mettre à jour l'état de la playlist existante dans le hook
@@ -139,19 +153,29 @@ export function SpotifySaveButton({ albums }: SpotifySaveButtonProps) {
           <TooltipTrigger asChild>
             <Button
               onClick={handleSave}
-              disabled={isSaving || albums.length === 0}
-              variant={existingPlaylist ? "default" : "outline"}
+              disabled={isSaving || isCheckingPlaylist || albums.length === 0}
+              variant={
+                isAuthenticated && existingPlaylist ? "default" : "outline"
+              }
               size="default"
               className={`gap-2 ${
-                existingPlaylist ? "bg-green-600 hover:bg-green-700" : ""
+                isAuthenticated && existingPlaylist
+                  ? "bg-green-600 hover:bg-green-700"
+                  : ""
               }`}
             >
               {isSaving ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : isCheckingPlaylist ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
               ) : (
                 <Music className="w-4 h-4" />
               )}
-              {isAuthenticated && existingPlaylist
+              {isSaving
+                ? "Sauvegarde..."
+                : isCheckingPlaylist
+                ? "Vérification..."
+                : isAuthenticated && existingPlaylist
                 ? "Mettre à jour"
                 : "Sauvegarder"}
             </Button>
@@ -159,9 +183,11 @@ export function SpotifySaveButton({ albums }: SpotifySaveButtonProps) {
           <TooltipContent>
             {albums.length === 0
               ? "Ajoutez des albums pour sauvegarder"
+              : isCheckingPlaylist
+              ? "Vérification de votre playlist existante..."
               : !isAuthenticated
               ? "Sauvegardons votre sélection d'albums"
-              : existingPlaylist
+              : isAuthenticated && existingPlaylist
               ? "Mettre à jour votre playlist Spotify"
               : "Sauvegarder sur Spotify"}
           </TooltipContent>

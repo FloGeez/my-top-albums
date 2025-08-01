@@ -43,6 +43,14 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
 
   // Vérifier s'il existe déjà une playlist pour ce top au moment de l'ouverture
   useEffect(() => {
+    console.log("📋 [SHARE-MODAL] useEffect triggered:", {
+      isOpen,
+      mounted,
+      isSpotifyAuthenticated,
+      albumsLength: albums.length,
+      existingPlaylist: existingPlaylist?.id,
+    });
+
     if (
       isOpen &&
       mounted &&
@@ -55,6 +63,8 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
       checkExistingPlaylist(albums).finally(() => {
         setIsCheckingExisting(false);
       });
+    } else {
+      console.log("📋 [SHARE-MODAL] Conditions not met for playlist check");
     }
   }, [
     isOpen,
@@ -324,7 +334,7 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
                     </div>
                   </div>
                 </div>
-              ) : existingPlaylist ? (
+              ) : isSpotifyAuthenticated && existingPlaylist ? (
                 <div className="text-center py-6">
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
                     <Music className="w-12 h-12 mx-auto mb-4 text-blue-600" />

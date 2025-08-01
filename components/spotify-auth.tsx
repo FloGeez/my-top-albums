@@ -14,6 +14,12 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useSpotifyAuth } from "@/hooks/use-spotify-auth";
 import { Music, LogOut, User, Play } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 export function SpotifyAuth() {
   const [isLoading, setIsLoading] = useState(false);
@@ -48,25 +54,36 @@ export function SpotifyAuth() {
   // Ne pas afficher le composant tant qu'il n'est pas monté (éviter l'hydration)
   if (!mounted) {
     return (
-      <div className="flex items-center gap-2">
-        <div className="w-4 h-4 bg-muted rounded animate-pulse"></div>
+      <div className="h-10 px-4 py-2 flex items-center gap-10">
         <div className="h-4 bg-muted rounded w-20 animate-pulse"></div>
+        <div className="w-4 h-4 bg-muted rounded animate-pulse"></div>
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <Button
-        onClick={handleLogin}
-        variant="ghost"
-        size="sm"
-        disabled={isLoading}
-        className="flex items-center gap-2"
-      >
-        <Music className="w-4 h-4" />
-        {isLoading ? "Connexion..." : "Se connecter"}
-      </Button>
+      <TooltipProvider delayDuration={100}>
+        {/* Bouton Partager */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={handleLogin}
+              variant="ghost"
+              size="sm"
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <Music className="w-4 h-4" />
+              {isLoading ? "Connexion..." : "Se connecter"}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Se connecter à Spotify vous permet de
+            <br /> sauvegarder et partager votre Top 50 !
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
 
