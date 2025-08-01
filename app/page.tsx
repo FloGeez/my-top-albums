@@ -667,7 +667,7 @@ export default function MusicApp() {
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mt-4 mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">
             TOP 50 Albums
           </h1>
