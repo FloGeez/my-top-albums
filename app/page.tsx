@@ -103,32 +103,24 @@ export default function MusicApp() {
       // Initialiser le service Spotify
       spotifyService.initializeClient();
 
-      // Récupérer la playlist publique
-      const playlist = await spotifyService.getPublicPlaylist(playlistId);
+      // Charger les albums directement depuis les tracks de la playlist (version simplifiée)
+      const albums = await spotifyService.loadAlbumsFromPlaylistTracks(
+        playlistId
+      );
 
-      if (playlist) {
-        // Essayer de parser les métadonnées depuis la description
-        const topData = spotifyService.parsePlaylistMetadata(playlist);
-
-        if (topData && topData.albums) {
-          // Charger les détails complets des albums
-          const albums = await spotifyService.loadAlbumsFromMetadata(
-            topData.albums
-          );
-          setTop50(albums);
-          setManualOrder(albums);
-          toast({
-            title: "Top partagé chargé !",
-            description: `${albums.length} albums chargés depuis la playlist "${playlist.name}"`,
-          });
-        } else {
-          toast({
-            title: "Playlist trouvée mais...",
-            description:
-              "Cette playlist ne contient pas de métadonnées de top albums",
-            variant: "destructive",
-          });
-        }
+      if (albums.length > 0) {
+        setTop50(albums);
+        setManualOrder(albums);
+        toast({
+          title: "Top partagé chargé !",
+          description: `${albums.length} albums chargés depuis la playlist Spotify`,
+        });
+      } else {
+        toast({
+          title: "Playlist trouvée mais...",
+          description: "Cette playlist ne contient pas d'albums",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error loading top from Spotify playlist:", error);
@@ -346,30 +338,35 @@ export default function MusicApp() {
             existingPlaylist.id
           );
 
-          // Charger les albums depuis la playlist trouvée
+          // Charger les albums depuis la playlist trouvée (version simplifiée)
           console.log("🔄 [SPOTIFY] Loading albums from found playlist");
-          const playlist = await spotifyService.getPublicPlaylist(
-            existingPlaylist.id
-          );
-          if (playlist) {
-            const topData = spotifyService.parsePlaylistMetadata(playlist);
-            if (topData && topData.albums) {
-              const albums = await spotifyService.loadAlbumsFromMetadata(
-                topData.albums
-              );
-              console.log(
-                "✅ [SPOTIFY] Loaded",
-                albums.length,
-                "albums from playlist"
-              );
-              setTop50(albums);
-              setManualOrder(albums);
-              toast({
-                title: "🔗 Playlist chargée !",
-                description: `${albums.length} albums chargés depuis votre playlist existante`,
-                duration: 3000,
-              });
-            }
+          try {
+            const albums = await spotifyService.loadAlbumsFromPlaylistTracks(
+              existingPlaylist.id
+            );
+            console.log(
+              "✅ [SPOTIFY] Loaded",
+              albums.length,
+              "albums from playlist"
+            );
+            setTop50(albums);
+            setManualOrder(albums);
+            toast({
+              title: "🔗 Playlist chargée !",
+              description: `${albums.length} albums chargés depuis votre playlist existante`,
+              duration: 3000,
+            });
+          } catch (error) {
+            console.error(
+              "❌ [SPOTIFY] Error loading albums from playlist:",
+              error
+            );
+            toast({
+              title: "⚠️ Erreur de chargement",
+              description:
+                "Impossible de charger les albums depuis la playlist",
+              variant: "destructive",
+            });
           }
         } else {
           console.log("❌ [SPOTIFY] No existing playlist found");
@@ -424,30 +421,35 @@ export default function MusicApp() {
             );
             updateUrlWithPlaylist(existingPlaylist.id);
 
-            // Charger les albums depuis la playlist trouvée
+            // Charger les albums depuis la playlist trouvée (version simplifiée)
             console.log("🔄 [AUTH-CHECK] Loading albums from found playlist");
-            const playlist = await spotifyService.getPublicPlaylist(
-              existingPlaylist.id
-            );
-            if (playlist) {
-              const topData = spotifyService.parsePlaylistMetadata(playlist);
-              if (topData && topData.albums) {
-                const albums = await spotifyService.loadAlbumsFromMetadata(
-                  topData.albums
-                );
-                console.log(
-                  "✅ [AUTH-CHECK] Loaded",
-                  albums.length,
-                  "albums from playlist"
-                );
-                setTop50(albums);
-                setManualOrder(albums);
-                toast({
-                  title: "🔗 Playlist chargée !",
-                  description: `${albums.length} albums chargés depuis votre playlist existante`,
-                  duration: 3000,
-                });
-              }
+            try {
+              const albums = await spotifyService.loadAlbumsFromPlaylistTracks(
+                existingPlaylist.id
+              );
+              console.log(
+                "✅ [AUTH-CHECK] Loaded",
+                albums.length,
+                "albums from playlist"
+              );
+              setTop50(albums);
+              setManualOrder(albums);
+              toast({
+                title: "🔗 Playlist chargée !",
+                description: `${albums.length} albums chargés depuis votre playlist existante`,
+                duration: 3000,
+              });
+            } catch (error) {
+              console.error(
+                "❌ [AUTH-CHECK] Error loading albums from playlist:",
+                error
+              );
+              toast({
+                title: "⚠️ Erreur de chargement",
+                description:
+                  "Impossible de charger les albums depuis la playlist",
+                variant: "destructive",
+              });
             }
           } else {
             console.log(

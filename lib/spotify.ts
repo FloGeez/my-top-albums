@@ -427,103 +427,15 @@ class SpotifyService {
     tracksAdded: number;
     isUpdate: boolean;
   }> {
-    try {
-      // Vérifier s'il existe déjà une playlist "Top 50 Albums"
-      const existingPlaylist = await this.findExistingTopPlaylist(albums);
-
-      if (existingPlaylist) {
-        // Mettre à jour la playlist existante
-        const result = await this.updateExistingPlaylist(
-          existingPlaylist.id,
-          albums
-        );
-        return { ...result, isUpdate: true };
-      } else {
-        // Créer une nouvelle playlist
-        const result = await this.createTop50Playlist(albums);
-        return { ...result, isUpdate: false };
-      }
-    } catch (error) {
-      console.error("Error creating/updating playlist:", error);
-      throw error;
-    }
+    // Utiliser la version simplifiée
+    return this.createOrUpdateTop50PlaylistSimple(albums);
   }
 
   async createTop50Playlist(
     albums: Album[]
   ): Promise<{ playlist: SpotifyPlaylist; tracksAdded: number }> {
-    try {
-      // Obtenir l'utilisateur actuel
-      const user = await this.getCurrentUser();
-
-      // Créer la playlist avec métadonnées pour identification
-      const timestamp = new Date().toISOString();
-      const playlistName = `🎵 Top 50 Albums`;
-
-      // Créer des métadonnées compactes pour éviter la limite de 300 caractères de Spotify
-      const metadata = {
-        v: "1.0", // version
-        t: timestamp, // createdAt
-        c: albums.length, // albumCount
-        a: albums.map((album, index) => ({
-          r: index + 1, // rank
-          i: album.id, // id
-          n: album.title, // name
-          ar: album.artist, // artist
-          y: album.year, // year
-        })),
-      };
-
-      const metadataString = JSON.stringify(metadata);
-      const playlistDescription = `[MT50]${metadataString}[/MT50]`;
-
-      const playlist = await this.createPlaylist(
-        user.id,
-        playlistName,
-        playlistDescription
-      );
-
-      // Récupérer les tracks de chaque album (première track de chaque album)
-      const trackUris: string[] = [];
-      let tracksAdded = 0;
-
-      console.log(`Processing ${albums.length} albums for playlist...`);
-
-      for (const album of albums) {
-        try {
-          console.log(`Getting tracks for album: ${album.title} (${album.id})`);
-          const tracks = await this.getAlbumTracks(album.id);
-          if (tracks.length > 0) {
-            // Ajouter la première track de l'album
-            trackUris.push(tracks[0]);
-            tracksAdded++;
-            console.log(`Added track from ${album.title}: ${tracks[0]}`);
-          } else {
-            console.warn(`No tracks found for album: ${album.title}`);
-          }
-        } catch (error) {
-          console.warn(`Failed to get tracks for album ${album.title}:`, error);
-        }
-      }
-
-      console.log(`Total track URIs collected: ${trackUris.length}`);
-
-      // Ajouter les tracks à la playlist
-      if (trackUris.length > 0) {
-        console.log(
-          `Adding ${trackUris.length} tracks to playlist ${playlist.id}...`
-        );
-        await this.addTracksToPlaylist(playlist.id, trackUris);
-        console.log(`Successfully added tracks to playlist`);
-      } else {
-        console.warn(`No tracks to add to playlist`);
-      }
-
-      return { playlist, tracksAdded };
-    } catch (error) {
-      console.error("Error creating playlist:", error);
-      throw error;
-    }
+    // Utiliser la version simplifiée
+    return this.createTop50PlaylistSimple(albums);
   }
 
   // Récupérer une playlist publique par son ID
@@ -611,8 +523,10 @@ class SpotifyService {
     return null;
   }
 
-  // Charger les albums depuis les métadonnées
+  // Charger les albums depuis les métadonnées (version simplifiée)
   async loadAlbumsFromMetadata(albumsMetadata: any[]): Promise<Album[]> {
+    // Si on a des métadonnées, on peut les utiliser comme fallback
+    // Mais la méthode principale sera loadAlbumsFromPlaylistTracks
     const albums: Album[] = [];
 
     for (const albumMeta of albumsMetadata) {
@@ -639,7 +553,7 @@ class SpotifyService {
     return albums;
   }
 
-  // Trouver la playlist "Top 50 Albums" de l'utilisateur
+  // Trouver la playlist "Top 50 Albums" de l'utilisateur (version simplifiée)
   async findExistingTopPlaylist(
     albums: Album[]
   ): Promise<SpotifyPlaylist | null> {
@@ -649,15 +563,35 @@ class SpotifyService {
         albums.length,
         "albums"
       );
-      const playlists = await this.getUserTopAlbumPlaylists();
+
+      // Obtenir toutes les playlists de l'utilisateur
+      const user = await this.getCurrentUser();
+      const accessToken = await this.getAccessToken();
+
+      const response = await fetch(
+        `https://api.spotify.com/v1/users/${user.id}/playlists?limit=50`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to get user playlists: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const playlists = data.items || [];
+
       console.log(
         "🔍 [SPOTIFY-SERVICE] Got",
         playlists.length,
-        "playlists from getUserTopAlbumPlaylists"
+        "playlists from user"
       );
 
       // Chercher spécifiquement la playlist "Top 50 Albums"
-      for (const { playlist } of playlists) {
+      for (const playlist of playlists) {
         console.log("🔍 [SPOTIFY-SERVICE] Checking playlist:", playlist.name);
         if (playlist.name === "🎵 Top 50 Albums") {
           console.log(
@@ -679,64 +613,13 @@ class SpotifyService {
     }
   }
 
-  // Mettre à jour une playlist existante
+  // Mettre à jour une playlist existante (version simplifiée)
   async updateExistingPlaylist(
     playlistId: string,
     albums: Album[]
   ): Promise<{ playlist: any; tracksAdded: number }> {
-    try {
-      // D'abord, vider la playlist
-      await this.clearPlaylist(playlistId);
-
-      // Puis ajouter les nouveaux morceaux
-      const trackUris: string[] = [];
-
-      for (const album of albums) {
-        try {
-          const tracks = await this.getAlbumTracks(album.id);
-          if (tracks.length > 0) {
-            trackUris.push(tracks[0]); // Premier morceau de l'album (déjà un URI)
-          }
-        } catch (error) {
-          console.error(
-            `Failed to get tracks for album ${album.title}:`,
-            error
-          );
-        }
-      }
-
-      if (trackUris.length > 0) {
-        await this.addTracksToPlaylist(playlistId, trackUris);
-      }
-
-      // Mettre à jour la description avec les nouvelles métadonnées
-      const compactMetadata = {
-        v: "1.0",
-        t: new Date().toISOString(),
-        c: albums.length,
-        a: albums.map((album, index) => ({
-          r: index + 1,
-          i: album.id,
-          n: album.title,
-          ar: album.artist,
-          y: album.year,
-        })),
-      };
-
-      const description = `[MT50]${JSON.stringify(compactMetadata)}[/MT50]`;
-      await this.updatePlaylistDescription(playlistId, description);
-
-      // Récupérer la playlist mise à jour
-      const updatedPlaylist = await this.getPublicPlaylist(playlistId);
-
-      return {
-        playlist: updatedPlaylist,
-        tracksAdded: trackUris.length,
-      };
-    } catch (error) {
-      console.error("Error updating playlist:", error);
-      throw error;
-    }
+    // Utiliser la version simplifiée
+    return this.updateExistingPlaylistSimple(playlistId, albums);
   }
 
   // Vider une playlist
@@ -952,31 +835,244 @@ class SpotifyService {
     playlist: SpotifyPlaylist;
     topData: any;
   }): Promise<Album[]> {
-    const albums: Album[] = [];
+    // Utiliser la nouvelle approche simplifiée basée sur les tracks
+    return this.loadAlbumsFromPlaylistTracks(playlistData.playlist.id);
+  }
 
-    for (const albumData of playlistData.topData.albums) {
-      try {
-        // Récupérer les détails complets de l'album depuis Spotify
-        const albumDetails = await this.getAlbumById(albumData.id);
-        if (albumDetails) {
-          albums.push(albumDetails);
+  // Nouvelle méthode pour obtenir les tracks d'une playlist
+  async getPlaylistTracks(playlistId: string): Promise<any[]> {
+    try {
+      const accessToken = await this.getAccessToken();
+
+      const response = await fetch(
+        `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=50`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
         }
-      } catch (error) {
-        console.warn(`Failed to load album ${albumData.title}:`, error);
-        // Utiliser les données sauvegardées comme fallback
-        albums.push({
-          id: albumData.id,
-          title: albumData.title,
-          artist: albumData.artist,
-          year: albumData.year,
-          genre: albumData.genre,
-          cover: "", // Sera récupéré plus tard si nécessaire
-          externalUrl: `https://open.spotify.com/album/${albumData.id}`,
-        });
-      }
-    }
+      );
 
-    return albums;
+      if (!response.ok) {
+        throw new Error(`Failed to get playlist tracks: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.items || [];
+    } catch (error) {
+      console.error("Error getting playlist tracks:", error);
+      throw error;
+    }
+  }
+
+  // Nouvelle méthode pour charger les albums depuis les tracks d'une playlist
+  async loadAlbumsFromPlaylistTracks(playlistId: string): Promise<Album[]> {
+    try {
+      console.log(
+        `🎵 [SPOTIFY-SERVICE] Loading albums from playlist tracks: ${playlistId}`
+      );
+
+      const tracks = await this.getPlaylistTracks(playlistId);
+      console.log(
+        `🎵 [SPOTIFY-SERVICE] Found ${tracks.length} tracks in playlist`
+      );
+
+      const albums: Album[] = [];
+      const processedAlbums = new Set<string>(); // Pour éviter les doublons
+
+      for (const trackItem of tracks) {
+        const track = trackItem.track;
+        if (!track || !track.album) continue;
+
+        const albumId = track.album.id;
+        if (processedAlbums.has(albumId)) continue; // Éviter les doublons
+
+        try {
+          // Récupérer les détails complets de l'album
+          const album = await this.getAlbumById(albumId);
+          if (album) {
+            albums.push(album);
+            processedAlbums.add(albumId);
+            console.log(
+              `✅ [SPOTIFY-SERVICE] Loaded album: ${album.title} - ${album.artist}`
+            );
+          }
+        } catch (error) {
+          console.warn(
+            `⚠️ [SPOTIFY-SERVICE] Failed to load album ${albumId}:`,
+            error
+          );
+          // Créer un album de fallback avec les infos disponibles
+          const fallbackAlbum: Album = {
+            id: albumId,
+            title: track.album.name,
+            artist: track.album.artists[0]?.name || "Unknown Artist",
+            year: parseInt(track.album.release_date.split("-")[0]) || 0,
+            genre: "Unknown",
+            cover: track.album.images[0]?.url || "/placeholder.svg",
+            externalUrl: track.album.external_urls.spotify,
+          };
+          albums.push(fallbackAlbum);
+          processedAlbums.add(albumId);
+        }
+      }
+
+      console.log(
+        `🎵 [SPOTIFY-SERVICE] Successfully loaded ${albums.length} albums from playlist`
+      );
+      return albums;
+    } catch (error) {
+      console.error("Error loading albums from playlist tracks:", error);
+      throw error;
+    }
+  }
+
+  // Version simplifiée de createTop50Playlist (sans métadonnées complexes)
+  async createTop50PlaylistSimple(
+    albums: Album[]
+  ): Promise<{ playlist: SpotifyPlaylist; tracksAdded: number }> {
+    try {
+      // Obtenir l'utilisateur actuel
+      const user = await this.getCurrentUser();
+
+      // Créer la playlist avec une description simple
+      const playlistName = `🎵 Top 50 Albums`;
+      const playlistDescription = `Top 50 albums créé avec My Top Albums`;
+
+      const playlist = await this.createPlaylist(
+        user.id,
+        playlistName,
+        playlistDescription
+      );
+
+      // Récupérer les tracks de chaque album (première track de chaque album)
+      const trackUris: string[] = [];
+      let tracksAdded = 0;
+
+      console.log(
+        `🎵 [SPOTIFY-SERVICE] Processing ${albums.length} albums for playlist...`
+      );
+
+      for (const album of albums) {
+        try {
+          console.log(
+            `🎵 [SPOTIFY-SERVICE] Getting tracks for album: ${album.title} (${album.id})`
+          );
+          const tracks = await this.getAlbumTracks(album.id);
+          if (tracks.length > 0) {
+            // Ajouter la première track de l'album
+            trackUris.push(tracks[0]);
+            tracksAdded++;
+            console.log(
+              `✅ [SPOTIFY-SERVICE] Added track from ${album.title}: ${tracks[0]}`
+            );
+          } else {
+            console.warn(
+              `⚠️ [SPOTIFY-SERVICE] No tracks found for album: ${album.title}`
+            );
+          }
+        } catch (error) {
+          console.warn(
+            `⚠️ [SPOTIFY-SERVICE] Failed to get tracks for album ${album.title}:`,
+            error
+          );
+        }
+      }
+
+      console.log(
+        `🎵 [SPOTIFY-SERVICE] Total track URIs collected: ${trackUris.length}`
+      );
+
+      // Ajouter les tracks à la playlist
+      if (trackUris.length > 0) {
+        console.log(
+          `🎵 [SPOTIFY-SERVICE] Adding ${trackUris.length} tracks to playlist ${playlist.id}...`
+        );
+        await this.addTracksToPlaylist(playlist.id, trackUris);
+        console.log(
+          `✅ [SPOTIFY-SERVICE] Successfully added tracks to playlist`
+        );
+      } else {
+        console.warn(`⚠️ [SPOTIFY-SERVICE] No tracks to add to playlist`);
+      }
+
+      return { playlist, tracksAdded };
+    } catch (error) {
+      console.error("Error creating playlist:", error);
+      throw error;
+    }
+  }
+
+  // Version simplifiée de updateExistingPlaylist (sans métadonnées complexes)
+  async updateExistingPlaylistSimple(
+    playlistId: string,
+    albums: Album[]
+  ): Promise<{ playlist: any; tracksAdded: number }> {
+    try {
+      console.log(
+        `🔄 [SPOTIFY-SERVICE] Updating existing playlist: ${playlistId}`
+      );
+
+      // Vider la playlist existante
+      await this.clearPlaylist(playlistId);
+
+      // Récupérer les tracks de chaque album
+      const trackUris: string[] = [];
+      let tracksAdded = 0;
+
+      for (const album of albums) {
+        try {
+          const tracks = await this.getAlbumTracks(album.id);
+          if (tracks.length > 0) {
+            trackUris.push(tracks[0]);
+            tracksAdded++;
+          }
+        } catch (error) {
+          console.warn(`Failed to get tracks for album ${album.title}:`, error);
+        }
+      }
+
+      // Ajouter les nouvelles tracks
+      if (trackUris.length > 0) {
+        await this.addTracksToPlaylist(playlistId, trackUris);
+      }
+
+      // Récupérer la playlist mise à jour
+      const playlist = await this.getPublicPlaylist(playlistId);
+
+      return { playlist, tracksAdded };
+    } catch (error) {
+      console.error("Error updating existing playlist:", error);
+      throw error;
+    }
+  }
+
+  // Version simplifiée de createOrUpdateTop50Playlist
+  async createOrUpdateTop50PlaylistSimple(albums: Album[]): Promise<{
+    playlist: SpotifyPlaylist;
+    tracksAdded: number;
+    isUpdate: boolean;
+  }> {
+    try {
+      // Vérifier s'il existe déjà une playlist "Top 50 Albums"
+      const existingPlaylist = await this.findExistingTopPlaylist(albums);
+
+      if (existingPlaylist) {
+        // Mettre à jour la playlist existante
+        const result = await this.updateExistingPlaylistSimple(
+          existingPlaylist.id,
+          albums
+        );
+        return { ...result, isUpdate: true };
+      } else {
+        // Créer une nouvelle playlist
+        const result = await this.createTop50PlaylistSimple(albums);
+        return { ...result, isUpdate: false };
+      }
+    } catch (error) {
+      console.error("Error creating/updating playlist:", error);
+      throw error;
+    }
   }
 
   // Récupérer un album par son ID
