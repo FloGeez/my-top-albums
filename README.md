@@ -23,6 +23,14 @@ Une application moderne pour créer et partager votre top 50 albums personnels, 
 - **Partage direct** vers Spotify
 - **Toutes les fonctionnalités restent disponibles** sans connexion
 
+### Système de sauvegarde avancé
+
+- **Sauvegardes automatiques** : Votre travail est sauvegardé en continu
+- **Sauvegardes manuelles** : Créez des points de restauration avant des changements importants
+- **Historique des versions** : Jusqu'à 10 sauvegardes conservées avec horodatage
+- **Chargement sécurisé** : Plus de perte de données lors du chargement de playlists externes
+- **Restauration facile** : Interface intuitive pour revenir à une version antérieure
+
 ## 🚀 Installation
 
 ### Prérequis

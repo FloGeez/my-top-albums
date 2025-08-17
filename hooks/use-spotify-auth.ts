@@ -40,6 +40,18 @@ export function useSpotifyAuth() {
     globalAuthState.existingPlaylist
   );
 
+  // Fonction utilitaire pour nettoyer complètement l'authentification
+  const clearAuthState = useCallback(() => {
+    spotifyService.logout();
+    globalAuthState.isAuthenticated = false;
+    globalAuthState.userProfile = null;
+    globalAuthState.existingPlaylist = null;
+    setIsAuthenticated(false);
+    setUserProfile(null);
+    setExistingPlaylist(null);
+    authEventManager.notify();
+  }, []);
+
   // Fonction pour vérifier et mettre à jour l'état d'authentification
   const checkAuth = useCallback(async () => {
     if (typeof window === "undefined") return;
@@ -63,16 +75,14 @@ export function useSpotifyAuth() {
         setUserProfile(profile);
       } catch (error) {
         console.error("Error loading user profile:", error);
-        globalAuthState.isAuthenticated = false;
-        globalAuthState.userProfile = null;
-        setIsAuthenticated(false);
-        setUserProfile(null);
+        // Token invalide - nettoyer complètement l'authentification
+        clearAuthState();
       }
     } else {
       globalAuthState.userProfile = null;
       setUserProfile(null);
     }
-  }, []);
+  }, [clearAuthState]);
 
   // Fonction pour se connecter
   const login = useCallback(() => {
@@ -82,14 +92,9 @@ export function useSpotifyAuth() {
   // Fonction pour se déconnecter
   const logout = useCallback(() => {
     console.log("useSpotifyAuth - logout called");
-    spotifyService.logout();
-    setIsAuthenticated(false);
-    setUserProfile(null);
-    setExistingPlaylist(null);
+    clearAuthState();
     console.log("useSpotifyAuth - logout state reset, notifying components");
-    // Notifier tous les autres composants
-    authEventManager.notify();
-  }, []);
+  }, [clearAuthState]);
 
   // Fonction pour vérifier s'il existe une playlist
   const checkExistingPlaylist = useCallback(

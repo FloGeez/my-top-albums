@@ -122,14 +122,6 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
     return `${baseUrl}?spotify=${playlistId}`;
   };
 
-  const updateUrlWithPlaylist = (playlistId: string) => {
-    if (typeof window === "undefined") return;
-
-    const url = new URL(window.location.href);
-    url.searchParams.set("spotify", playlistId);
-    window.history.replaceState({}, document.title, url.toString());
-  };
-
   // Créer ou mettre à jour la playlist "Top 50 Albums"
   const createOrUpdateSpotifyPlaylist = async () => {
     if (!spotifyService.isUserAuthenticated()) {
@@ -150,14 +142,12 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
       // Mettre à jour l'état de la playlist existante dans le hook
       updateExistingPlaylist(result.playlist);
 
-      // Mettre à jour l'URL avec l'ID de la playlist
-      updateUrlWithPlaylist(result.playlist.id);
-
+      // Pas de mise à jour d'URL automatique pour notre propre sauvegarde
       toast({
         title: result.isUpdate ? "Playlist mise à jour !" : "Playlist créée !",
         description: `${result.tracksAdded} morceaux ${
           result.isUpdate ? "mis à jour dans" : "ajoutés à"
-        } votre playlist "Top 50 Albums". L'URL a été mise à jour avec le lien de partage !`,
+        } votre playlist "Top 50 Albums".`,
       });
     } catch (error) {
       console.error("Error creating/updating playlist:", error);

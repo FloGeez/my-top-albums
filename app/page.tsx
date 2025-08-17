@@ -21,9 +21,8 @@ import {
   ArrowDown,
   ArrowUp,
   ExternalLink,
-  Layout,
-  Columns,
   AlertTriangle,
+  Clock,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -58,8 +57,10 @@ import Image from "next/image";
 import { spotifyService, type Album } from "@/lib/spotify";
 import { ShareDialog } from "@/components/share-dialog";
 import { SpotifyAuth } from "@/components/spotify-auth";
-
 import { SpotifySaveButton } from "@/components/spotify-save-button";
+import { BackupManagerDialog } from "@/components/backup-manager-dialog";
+import { PlaylistLoader } from "@/components/playlist-loader";
+import { BackupManager } from "@/lib/backup-manager";
 import { useTheme } from "next-themes";
 import { useSpotifyAuth } from "@/hooks/use-spotify-auth";
 
@@ -80,63 +81,16 @@ export default function MusicApp() {
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
   const [manualOrder, setManualOrder] = useState<Album[]>([]);
   const [mounted, setMounted] = useState(false);
-  const [hasCheckedExistingPlaylist, setHasCheckedExistingPlaylist] =
-    useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [isCheckingPlaylist, setIsCheckingPlaylist] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [sharedPlaylistId, setSharedPlaylistId] = useState<string | null>(null);
+  const [isFromSharedLink, setIsFromSharedLink] = useState<boolean | null>(
+    null
+  );
+  const [isBackupDialogOpen, setIsBackupDialogOpen] = useState(false);
+  const [hasLoadedFromSpotify, setHasLoadedFromSpotify] = useState(false);
   const { theme, setTheme } = useTheme();
-  const { isAuthenticated, checkExistingPlaylist } = useSpotifyAuth();
-
-  // Fonction utilitaire pour mettre à jour l'URL avec une playlist
-  const updateUrlWithPlaylist = (playlistId: string) => {
-    if (typeof window === "undefined") return;
-
-    const url = new URL(window.location.href);
-    url.searchParams.set("spotify", playlistId);
-    window.history.replaceState({}, document.title, url.toString());
-  };
-
-  // Fonction pour charger un top depuis une playlist Spotify publique
-  const loadTopFromSpotifyPlaylist = async (playlistId: string) => {
-    try {
-      // Initialiser le service Spotify
-      spotifyService.initializeClient();
-
-      // Charger les albums directement depuis les tracks de la playlist (version simplifiée)
-      const albums = await spotifyService.loadAlbumsFromPlaylistTracks(
-        playlistId
-      );
-
-      if (albums.length > 0) {
-        setTop50(albums);
-        setManualOrder(albums);
-        toast({
-          title: "Top partagé chargé !",
-          description: `${albums.length} albums chargés depuis la playlist Spotify`,
-        });
-      } else {
-        toast({
-          title: "Playlist trouvée mais...",
-          description: "Cette playlist ne contient pas d'albums",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error loading top from Spotify playlist:", error);
-      toast({
-        title: "Erreur de chargement",
-        description:
-          "Impossible de charger le top depuis cette playlist Spotify",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Déterminer le mode de vue par défaut basé sur la taille de l'écran
-  useEffect(() => {
-    // Suppression du useEffect de resize - on utilise uniquement les classes responsive Tailwind
-  }, []);
+  const { isAuthenticated } = useSpotifyAuth();
 
   // Charger le top 50 et l'ordre manuel depuis localStorage au démarrage
   useEffect(() => {
@@ -205,6 +159,11 @@ export default function MusicApp() {
       "albums"
     );
     localStorage.setItem("music-top50-albums", JSON.stringify(top50));
+
+    // Créer une sauvegarde automatique si il y a des albums
+    if (top50.length > 0) {
+      BackupManager.autoBackup(top50, `Top 50 - ${top50.length} albums`);
+    }
   }, [top50, mounted]);
 
   // Sauvegarder l'ordre manuel dans localStorage à chaque modification
@@ -246,224 +205,14 @@ export default function MusicApp() {
       // Nettoyer l'URL
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (spotifyParam) {
-      // Charger le top depuis une playlist Spotify
-      loadTopFromSpotifyPlaylist(spotifyParam);
-
-      // Nettoyer l'URL
-      window.history.replaceState({}, document.title, window.location.pathname);
+      // Détecter la playlist dans l'URL mais ne pas la charger automatiquement
+      console.log("🔗 [URL] Spotify playlist detected in URL:", spotifyParam);
+      setSharedPlaylistId(spotifyParam);
+      setIsFromSharedLink(true); // Considérer comme lien externe par défaut
     }
   }, [toast]);
 
-  // Détecter et mettre à jour l'URL si une playlist "Top 50 Albums" existe
-  useEffect(() => {
-    console.log("🎵 [SPOTIFY] useEffect triggered - checking conditions:", {
-      mounted,
-      top50Length: top50.length,
-      hasCheckedExistingPlaylist,
-      isInitializing,
-    });
-
-    const checkAndUpdateUrlForExistingPlaylist = async () => {
-      console.log("🔍 [SPOTIFY] checkAndUpdateUrlForExistingPlaylist called");
-
-      if (
-        typeof window === "undefined" ||
-        !mounted ||
-        hasCheckedExistingPlaylist ||
-        isInitializing
-      ) {
-        console.log("❌ [SPOTIFY] Skipping check - conditions not met");
-        return;
-      }
-
-      // Ne faire cela que si l'URL ne contient pas déjà un paramètre spotify
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has("spotify")) {
-        console.log("🔗 [SPOTIFY] URL already has spotify param - skipping");
-        setHasCheckedExistingPlaylist(true);
-        return;
-      }
-
-      // Initialiser le service Spotify et vérifier l'authentification
-      console.log("🔐 [SPOTIFY] Checking authentication...");
-      spotifyService.initializeClient();
-      if (!spotifyService.isUserAuthenticated()) {
-        console.log("❌ [SPOTIFY] User not authenticated - skipping");
-        setHasCheckedExistingPlaylist(true);
-        return;
-      }
-
-      // Vérifier s'il y a des albums dans le top50
-      const albumsToCheck = top50;
-      console.log("📋 [SPOTIFY] Albums to check:", albumsToCheck.length);
-      if (albumsToCheck.length === 0) {
-        console.log("❌ [SPOTIFY] No albums to check - skipping");
-        setHasCheckedExistingPlaylist(true);
-        return;
-      }
-
-      // Afficher un indicateur de chargement
-      console.log("⏳ [SPOTIFY] Starting playlist search...");
-      setIsCheckingPlaylist(true);
-
-      try {
-        const existingPlaylist = await spotifyService.findExistingTopPlaylist(
-          albumsToCheck
-        );
-        if (existingPlaylist) {
-          console.log(
-            "✅ [SPOTIFY] Found existing playlist:",
-            existingPlaylist.id
-          );
-          // Mettre à jour l'URL avec l'ID de la playlist trouvée
-          updateUrlWithPlaylist(existingPlaylist.id);
-          console.log(
-            "🔗 [SPOTIFY] URL updated with existing playlist:",
-            existingPlaylist.id
-          );
-
-          // Charger les albums depuis la playlist trouvée (version simplifiée)
-          console.log("🔄 [SPOTIFY] Loading albums from found playlist");
-          try {
-            const albums = await spotifyService.loadAlbumsFromPlaylistTracks(
-              existingPlaylist.id
-            );
-            console.log(
-              "✅ [SPOTIFY] Loaded",
-              albums.length,
-              "albums from playlist"
-            );
-            setTop50(albums);
-            setManualOrder(albums);
-            toast({
-              title: "🔗 Playlist chargée !",
-              description: `${albums.length} albums chargés depuis votre playlist existante`,
-              duration: 3000,
-            });
-          } catch (error) {
-            console.error(
-              "❌ [SPOTIFY] Error loading albums from playlist:",
-              error
-            );
-            toast({
-              title: "⚠️ Erreur de chargement",
-              description:
-                "Impossible de charger les albums depuis la playlist",
-              variant: "destructive",
-            });
-          }
-        } else {
-          console.log("❌ [SPOTIFY] No existing playlist found");
-        }
-      } catch (error) {
-        console.error(
-          "❌ [SPOTIFY] Error checking for existing playlist:",
-          error
-        );
-        // Error is logged but not used further
-      } finally {
-        console.log("🏁 [SPOTIFY] Playlist check completed");
-        setIsCheckingPlaylist(false);
-        setHasCheckedExistingPlaylist(true);
-      }
-    };
-
-    // Attendre que l'initialisation soit terminée et qu'il y ait des albums
-    // IMPORTANT: Ne pas inclure top50 dans les dépendances pour éviter les boucles
-    if (
-      !isInitializing &&
-      mounted &&
-      top50.length > 0 &&
-      !hasCheckedExistingPlaylist
-    ) {
-      console.log("⏰ [SPOTIFY] Setting timer for playlist check in 2000ms");
-      const timer = setTimeout(checkAndUpdateUrlForExistingPlaylist, 2000);
-      return () => {
-        console.log("🚫 [SPOTIFY] Clearing playlist check timer");
-        clearTimeout(timer);
-      };
-    } else {
-      console.log("⏸️ [SPOTIFY] Not ready for playlist check yet");
-    }
-  }, [mounted, hasCheckedExistingPlaylist, isInitializing, toast]); // Retiré top50 des dépendances
-
-  // Vérifier automatiquement l'existence d'une playlist quand l'utilisateur se connecte
-  useEffect(() => {
-    if (mounted && isAuthenticated && !hasCheckedExistingPlaylist) {
-      console.log(
-        "🔍 [AUTH-CHECK] User connected, checking for existing playlist"
-      );
-      const checkPlaylistAfterAuth = async () => {
-        try {
-          // Si pas d'albums dans le top50, on vérifie quand même les playlists existantes
-          const albumsToCheck = top50.length > 0 ? top50 : [];
-          const existingPlaylist = await checkExistingPlaylist(albumsToCheck);
-          if (existingPlaylist) {
-            console.log(
-              "✅ [AUTH-CHECK] Found existing playlist after auth:",
-              existingPlaylist.id
-            );
-            updateUrlWithPlaylist(existingPlaylist.id);
-
-            // Charger les albums depuis la playlist trouvée (version simplifiée)
-            console.log("🔄 [AUTH-CHECK] Loading albums from found playlist");
-            try {
-              const albums = await spotifyService.loadAlbumsFromPlaylistTracks(
-                existingPlaylist.id
-              );
-              console.log(
-                "✅ [AUTH-CHECK] Loaded",
-                albums.length,
-                "albums from playlist"
-              );
-              setTop50(albums);
-              setManualOrder(albums);
-              toast({
-                title: "🔗 Playlist chargée !",
-                description: `${albums.length} albums chargés depuis votre playlist existante`,
-                duration: 3000,
-              });
-            } catch (error) {
-              console.error(
-                "❌ [AUTH-CHECK] Error loading albums from playlist:",
-                error
-              );
-              toast({
-                title: "⚠️ Erreur de chargement",
-                description:
-                  "Impossible de charger les albums depuis la playlist",
-                variant: "destructive",
-              });
-            }
-          } else {
-            console.log(
-              "❌ [AUTH-CHECK] No existing playlist found after auth"
-            );
-          }
-        } catch (error) {
-          console.error(
-            "❌ [AUTH-CHECK] Error checking playlist after auth:",
-            error
-          );
-        } finally {
-          // Marquer comme vérifié pour éviter les boucles
-          console.log("🏁 [AUTH-CHECK] Marking as checked to prevent loops");
-          setHasCheckedExistingPlaylist(true);
-        }
-      };
-
-      // Délai pour laisser le temps à l'authentification de se stabiliser
-      const timer = setTimeout(checkPlaylistAfterAuth, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [
-    mounted,
-    isAuthenticated,
-    hasCheckedExistingPlaylist,
-    checkExistingPlaylist,
-    updateUrlWithPlaylist,
-    toast,
-  ]);
+  // Plus de chargement automatique - tout se fait sur demande maintenant
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -663,6 +412,118 @@ export default function MusicApp() {
     }
   };
 
+  // Fonction pour copier le lien de partage
+  const copyShareLink = () => {
+    if (typeof window === "undefined") return;
+
+    const currentUrl = window.location.href;
+    navigator.clipboard.writeText(currentUrl).then(() => {
+      toast({
+        title: "Lien copié !",
+        description: "Le lien de partage a été copié dans le presse-papiers",
+      });
+    });
+  };
+
+  // Fonction utilitaire pour charger une playlist et mettre à jour l'état
+  const loadPlaylistAndUpdateState = async (
+    playlistId: string,
+    isOwnPlaylist: boolean = false
+  ) => {
+    try {
+      const albums = await spotifyService.loadAlbumsFromPlaylistTracks(
+        playlistId
+      );
+
+      if (albums.length > 0) {
+        setTop50(albums);
+        setManualOrder(albums);
+        setSharedPlaylistId(playlistId);
+        setIsFromSharedLink(!isOwnPlaylist);
+        return albums.length;
+      } else {
+        throw new Error("Playlist vide");
+      }
+    } catch (error) {
+      console.error("Error loading playlist:", error);
+      throw error;
+    }
+  };
+
+  // Fonction pour charger sa propre playlist
+  const loadOwnPlaylist = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Non connecté",
+        description: "Connectez-vous à Spotify pour charger votre playlist",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log("🎵 [LOAD-OWN] Loading own playlist...");
+
+      // Chercher la playlist existante de l'utilisateur
+      const existingPlaylist = await spotifyService.findExistingTopPlaylist([]);
+
+      if (existingPlaylist) {
+        console.log("🎵 [LOAD-OWN] Found own playlist:", existingPlaylist.id);
+
+        const albumsCount = await loadPlaylistAndUpdateState(
+          existingPlaylist.id,
+          true
+        );
+
+        // Pas de mise à jour d'URL pour notre propre playlist
+        setIsFromSharedLink(false);
+        setHasLoadedFromSpotify(true);
+      } else {
+        toast({
+          title: "Aucune playlist trouvée",
+          description: "Vous n'avez pas encore de playlist Top 50",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error loading own playlist:", error);
+      toast({
+        title: "Erreur de chargement",
+        description: "Impossible de charger votre playlist",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Fonction pour charger une playlist partagée
+  const loadSharedPlaylist = async (playlistId: string) => {
+    try {
+      console.log("🎵 [LOAD-SHARED] Loading shared playlist:", playlistId);
+
+      const albumsCount = await loadPlaylistAndUpdateState(playlistId, false);
+      setHasLoadedFromSpotify(true);
+    } catch (error) {
+      console.error("Error loading shared playlist:", error);
+      toast({
+        title: "Erreur de chargement",
+        description: "Impossible de charger la playlist partagée",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Fonction pour restaurer une sauvegarde
+  const handleRestoreBackup = (albums: Album[]) => {
+    setTop50(albums);
+    setManualOrder(albums);
+    setSortMode("manual");
+  };
+
+  // Fonction pour réinitialiser l'état de chargement
+  const resetLoadState = () => {
+    setHasLoadedFromSpotify(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 py-12">
@@ -715,6 +576,22 @@ export default function MusicApp() {
               )}
             </TooltipProvider>
           </div>
+
+          {/* Chargement sur demande des playlists */}
+          {mounted && (
+            <div className="mb-6 max-w-2xl mx-auto">
+              <PlaylistLoader
+                currentAlbums={top50}
+                spotifyPlaylistId={sharedPlaylistId || undefined}
+                isFromSharedLink={isFromSharedLink || false}
+                isAuthenticated={isAuthenticated}
+                onLoadOwnPlaylist={loadOwnPlaylist}
+                onLoadSharedPlaylist={loadSharedPlaylist}
+                hasLoadedContent={hasLoadedFromSpotify}
+                onResetLoadState={resetLoadState}
+              />
+            </div>
+          )}
         </div>
 
         {/* Paramètres en haut à droite */}
@@ -725,7 +602,26 @@ export default function MusicApp() {
           {/* Spotify Auth */}
           <SpotifyAuth />
 
-          {/* Suppression du toggle des vues - on utilise uniquement les classes responsive Tailwind */}
+          {/* Bouton Gestionnaire de sauvegardes - plus discret */}
+          {mounted && (
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={() => setIsBackupDialogOpen(true)}
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Gestionnaire de sauvegardes"
+                  >
+                    <Clock className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Gérer vos sauvegardes et restaurer d'anciennes versions
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
 
           {/* Theme Toggle */}
           {mounted && (
@@ -941,6 +837,14 @@ export default function MusicApp() {
         onClose={() => setIsShareDialogOpen(false)}
         albums={top50}
       />
+
+      <BackupManagerDialog
+        isOpen={isBackupDialogOpen}
+        onClose={() => setIsBackupDialogOpen(false)}
+        onRestore={handleRestoreBackup}
+        currentAlbums={top50}
+      />
+
       {isFullscreen && (
         <FullscreenView top50={top50} onClose={() => setIsFullscreen(false)} />
       )}

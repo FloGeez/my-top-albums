@@ -69,14 +69,6 @@ export function SpotifySaveButton({ albums }: SpotifySaveButtonProps) {
     existingPlaylist,
   ]);
 
-  const updateUrlWithPlaylist = (playlistId: string) => {
-    if (typeof window === "undefined") return;
-
-    const url = new URL(window.location.href);
-    url.searchParams.set("spotify", playlistId);
-    window.history.replaceState({}, document.title, url.toString());
-  };
-
   const handleSave = async () => {
     console.log("💾 [SAVE-BTN] handleSave called:", {
       isAuthenticated,
@@ -109,14 +101,12 @@ export function SpotifySaveButton({ albums }: SpotifySaveButtonProps) {
       // Mettre à jour l'état de la playlist existante dans le hook
       updateExistingPlaylist(result.playlist);
 
-      // Mettre à jour l'URL avec l'ID de la playlist
-      updateUrlWithPlaylist(result.playlist.id);
-
+      // Pas de mise à jour d'URL pour notre propre sauvegarde
       toast({
         title: result.isUpdate ? "Playlist mise à jour !" : "Playlist créée !",
         description: `${result.tracksAdded} morceaux ${
           result.isUpdate ? "mis à jour dans" : "ajoutés à"
-        } votre playlist "Top 50 Albums". L'URL a été mise à jour avec le lien de partage !`,
+        } votre playlist "Top 50 Albums".`,
       });
     } catch (error) {
       console.error("Error saving to Spotify:", error);
