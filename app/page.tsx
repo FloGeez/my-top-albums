@@ -55,11 +55,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { spotifyService, type Album } from "@/lib/spotify";
@@ -419,19 +415,6 @@ export default function MusicApp() {
     }
   };
 
-  // Fonction pour copier le lien de partage
-  const copyShareLink = () => {
-    if (typeof window === "undefined") return;
-
-    const currentUrl = window.location.href;
-    navigator.clipboard.writeText(currentUrl).then(() => {
-      toast({
-        title: "Lien copié !",
-        description: "Le lien de partage a été copié dans le presse-papiers",
-      });
-    });
-  };
-
   // Fonction utilitaire pour charger une playlist et mettre à jour l'état
   const loadPlaylistAndUpdateState = async (
     playlistId: string,
@@ -533,7 +516,7 @@ export default function MusicApp() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 pb-4 pt-16 md:pt-4">
         {/* Notification discrète pour playlist partagée */}
         {sharedPlaylistId && isFromSharedLink && top50.length === 0 && (
           <div className="max-w-md mx-auto mb-4">
@@ -554,61 +537,16 @@ export default function MusicApp() {
           </div>
         )}
 
-        {/* Header - Focus sur l'essentiel */}
-        <div className="text-center mt-4 mb-6">
-          <h1 className="text-3xl font-bold text-foreground mb-1">
+        {/* Header simplifié - Titre à gauche */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-foreground">
             Mon Top 50 Albums
           </h1>
           {top50.length > 0 && (
-            <p className="text-muted-foreground text-sm mb-3">
+            <p className="text-muted-foreground text-sm mt-1">
               {top50.length} album{top50.length > 1 ? "s" : ""} dans votre
               sélection
             </p>
-          )}
-
-          {/* Actions principales - identiques desktop/mobile */}
-          {mounted && top50.length > 0 && (
-            <div className="flex items-center justify-center gap-2 mt-4">
-              <TooltipProvider delayDuration={100}>
-                {/* Sauvegarder */}
-                <SpotifySaveButton albums={top50} />
-
-                {/* Partager */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setIsShareDialogOpen(true)}
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <Link className="w-3 h-3" />
-                      Partager
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Partager votre Top 50</TooltipContent>
-                </Tooltip>
-
-                {/* Séparateur */}
-                <div className="w-px h-4 bg-border mx-1"></div>
-
-                {/* Plein écran - bien visible */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setIsFullscreen(true)}
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <Maximize className="w-3 h-3" />
-                      Plein écran
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Afficher en plein écran</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
           )}
 
           {/* Indicateur de chargement subtil */}
@@ -781,13 +719,36 @@ export default function MusicApp() {
 
         {/* Vue en panneaux (desktop uniquement) */}
         <div className="hidden md:block">
-          <ResizablePanelGroup
-            direction="horizontal"
-            className="min-h-[800px] rounded-lg border"
-          >
-            {/* Panneau Top 50 */}
-            <ResizablePanel defaultSize={50} minSize={30}>
-              <div className="p-6 h-full overflow-y-auto">
+          <div className="grid grid-cols-3 gap-6 min-h-[80vh]">
+            {/* Panneau Recherche - Gauche */}
+            <div className="col-span-1">
+              <div className="p-6 h-full overflow-y-auto border rounded-lg">
+                <div className="flex items-center gap-2 mb-4">
+                  <Search className="w-4 h-4 text-primary" />
+                  <h2 className="text-lg font-medium">Recherche d'albums</h2>
+                </div>
+                {!mounted ? (
+                  <SearchContentSkeleton />
+                ) : (
+                  <MemoizedSearchContent
+                    mounted={mounted}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    isLoading={isLoading}
+                    hasSearched={hasSearched}
+                    searchResults={searchResults}
+                    handleSearch={handleSearch}
+                    top50={top50}
+                    addToTop50={addToTop50}
+                    removeFromTop50={removeFromTop50}
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Panneau Top 50 - Droite */}
+            <div className="col-span-2">
+              <div className="p-6 h-full overflow-y-auto border rounded-lg">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Star className="w-4 h-4 text-primary" />
@@ -926,38 +887,61 @@ export default function MusicApp() {
                   />
                 )}
               </div>
-            </ResizablePanel>
-
-            <ResizableHandle withHandle />
-
-            {/* Panneau Recherche */}
-            <ResizablePanel defaultSize={50} minSize={30}>
-              <div className="p-6 h-full overflow-y-auto">
-                <div className="flex items-center gap-2 mb-4">
-                  <Search className="w-4 h-4 text-primary" />
-                  <h2 className="text-lg font-medium">Recherche d'albums</h2>
-                </div>
-                {!mounted ? (
-                  <SearchContentSkeleton />
-                ) : (
-                  <MemoizedSearchContent
-                    mounted={mounted}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    isLoading={isLoading}
-                    hasSearched={hasSearched}
-                    searchResults={searchResults}
-                    handleSearch={handleSearch}
-                    top50={top50}
-                    addToTop50={addToTop50} // Pass the function
-                    removeFromTop50={removeFromTop50} // Pass the function
-                  />
-                )}
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Dock flottant en bas - Actions principales */}
+      {mounted && top50.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
+          <div className="bg-background/95 backdrop-blur-sm border shadow-lg rounded-full px-4 py-2">
+            <TooltipProvider delayDuration={100}>
+              <div className="flex items-center gap-2">
+                {/* Sauvegarder */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="inline-block">
+                      <SpotifySaveButton albums={top50} variant="dock" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>Sauvegarder sur Spotify</TooltipContent>
+                </Tooltip>
+
+                {/* Partager */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setIsShareDialogOpen(true)}
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-foreground hover:bg-accent"
+                    >
+                      <Link className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Partager votre Top 50</TooltipContent>
+                </Tooltip>
+
+                {/* Plein écran */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setIsFullscreen(true)}
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-foreground hover:bg-accent"
+                    >
+                      <Maximize className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Mode plein écran</TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
+          </div>
+        </div>
+      )}
 
       <ShareDialog
         isOpen={isShareDialogOpen}
@@ -1032,7 +1016,7 @@ const MemoizedSearchContent = React.memo(function SearchContent({
       </div>
 
       {isLoading ? (
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid gap-4 grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 8 }).map((_, i) => (
             <AlbumSkeleton key={i} />
           ))}
@@ -1044,7 +1028,7 @@ const MemoizedSearchContent = React.memo(function SearchContent({
           <p className="text-sm mt-1">Essayez un autre terme de recherche</p>
         </div>
       ) : searchResults.length > 0 ? (
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="grid gap-4 grid-cols-2 xl:grid-cols-3">
           {searchResults.map((album) => (
             <AlbumCard
               key={album.id}
@@ -1238,7 +1222,7 @@ const MemoizedTop50Content = React.memo(function Top50Content({
           </div>
 
           <div
-            className={`grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5`}
+            className={`grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6`}
           >
             {top50.map((album, index) => (
               <CompactRankedAlbumCard

@@ -22,9 +22,13 @@ import { Music, RefreshCw, Save, Upload } from "lucide-react";
 
 interface SpotifySaveButtonProps {
   albums: Album[];
+  variant?: "default" | "dock";
 }
 
-export function SpotifySaveButton({ albums }: SpotifySaveButtonProps) {
+export function SpotifySaveButton({
+  albums,
+  variant = "default",
+}: SpotifySaveButtonProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isCheckingPlaylist, setIsCheckingPlaylist] = useState(false);
   const [showExplanationModal, setShowExplanationModal] = useState(false);
@@ -123,68 +127,94 @@ export function SpotifySaveButton({ albums }: SpotifySaveButtonProps) {
 
   if (!mounted) {
     return (
-      <Button disabled variant="outline" size="icon">
+      <Button
+        disabled
+        variant="ghost"
+        size="icon"
+        className="text-muted-foreground"
+      >
         <Music className="w-4 h-4" />
       </Button>
     );
   }
 
-  // Le bouton est maintenant toujours cliquable
-
-  // Afficher un skeleton si pas encore monté
-  if (!mounted) {
-    return <div className="h-10 bg-muted rounded w-32 animate-pulse"></div>;
-  }
-
   return (
     <>
-      <TooltipProvider delayDuration={100}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="inline-block">
-              <Button
-                onClick={handleSave}
-                disabled={isSaving || isCheckingPlaylist || albums.length === 0}
-                variant="outline"
-                size="sm"
-                className={`gap-2 ${
-                  isAuthenticated && existingPlaylist
-                    ? "text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {isSaving ? (
-                  <RefreshCw className="w-3 h-3 animate-spin" />
-                ) : isCheckingPlaylist ? (
-                  <RefreshCw className="w-3 h-3 animate-spin" />
-                ) : isAuthenticated && existingPlaylist ? (
-                  <Upload className="w-3 h-3" />
-                ) : (
-                  <Save className="w-3 h-3" />
-                )}
-                {isSaving
-                  ? "Sauvegarde..."
-                  : isCheckingPlaylist
-                  ? "Vérification..."
-                  : isAuthenticated && existingPlaylist
-                  ? "Mettre à jour"
-                  : "Sauvegarder"}
-              </Button>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            {albums.length === 0
-              ? "Ajoutez des albums à votre Top pour sauvegarder"
-              : isCheckingPlaylist
-              ? "Vérification de votre playlist existante..."
-              : !isAuthenticated
-              ? "Sauvegardons votre sélection d'albums"
-              : isAuthenticated && existingPlaylist
-              ? "Mettre à jour votre playlist Spotify"
-              : "Sauvegarder sur Spotify"}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      {variant === "dock" ? (
+        // Version dock - bouton icon simple
+        <Button
+          onClick={handleSave}
+          disabled={isSaving || isCheckingPlaylist || albums.length === 0}
+          variant="ghost"
+          size="icon"
+          className={`text-muted-foreground hover:text-foreground hover:bg-accent ${
+            isAuthenticated && existingPlaylist
+              ? "text-green-600 hover:text-green-700"
+              : ""
+          }`}
+        >
+          {isSaving ? (
+            <RefreshCw className="w-4 h-4 animate-spin" />
+          ) : isCheckingPlaylist ? (
+            <RefreshCw className="w-4 h-4 animate-spin" />
+          ) : isAuthenticated && existingPlaylist ? (
+            <Upload className="w-4 h-4" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
+        </Button>
+      ) : (
+        // Version par défaut - bouton avec texte
+        <TooltipProvider delayDuration={100}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="inline-block">
+                <Button
+                  onClick={handleSave}
+                  disabled={
+                    isSaving || isCheckingPlaylist || albums.length === 0
+                  }
+                  variant="outline"
+                  size="sm"
+                  className={`gap-2 ${
+                    isAuthenticated && existingPlaylist
+                      ? "text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {isSaving ? (
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                  ) : isCheckingPlaylist ? (
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                  ) : isAuthenticated && existingPlaylist ? (
+                    <Upload className="w-3 h-3" />
+                  ) : (
+                    <Save className="w-3 h-3" />
+                  )}
+                  {isSaving
+                    ? "Sauvegarde..."
+                    : isCheckingPlaylist
+                    ? "Vérification..."
+                    : isAuthenticated && existingPlaylist
+                    ? "Mettre à jour"
+                    : "Sauvegarder"}
+                </Button>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              {albums.length === 0
+                ? "Ajoutez des albums à votre Top pour sauvegarder"
+                : isCheckingPlaylist
+                ? "Vérification de votre playlist existante..."
+                : !isAuthenticated
+                ? "Sauvegardons votre sélection d'albums"
+                : isAuthenticated && existingPlaylist
+                ? "Mettre à jour votre playlist Spotify"
+                : "Sauvegarder sur Spotify"}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
 
       {/* Modale d'explication pour la sauvegarde */}
       <Dialog
