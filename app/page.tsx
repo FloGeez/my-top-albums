@@ -719,10 +719,10 @@ export default function MusicApp() {
 
         {/* Vue en panneaux (desktop uniquement) */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-3 gap-6 min-h-[80vh]">
+          <div className="grid grid-cols-3 min-h-[80vh] border rounded-lg overflow-hidden">
             {/* Panneau Recherche - Gauche */}
             <div className="col-span-1">
-              <div className="p-6 h-full overflow-y-auto border rounded-lg">
+              <div className="p-6 h-full overflow-y-auto border-r">
                 <div className="flex items-center gap-2 mb-4">
                   <Search className="w-4 h-4 text-primary" />
                   <h2 className="text-lg font-medium">Recherche d'albums</h2>
@@ -748,7 +748,7 @@ export default function MusicApp() {
 
             {/* Panneau Top 50 - Droite */}
             <div className="col-span-2">
-              <div className="p-6 h-full overflow-y-auto border rounded-lg">
+              <div className="p-6 h-full overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Star className="w-4 h-4 text-primary" />
