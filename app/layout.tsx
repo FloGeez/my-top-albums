@@ -8,8 +8,9 @@ import { ThemeProvider } from "@/components/theme-provider"; // Importez le Them
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Top 50 Albums",
-  description: "Créez votre sélection personnelle des meilleurs albums",
+  title: "Mon Top 50 Albums",
+  description:
+    "Créez, organisez et partagez votre sélection personnelle d'albums",
 };
 
 export default function RootLayout({

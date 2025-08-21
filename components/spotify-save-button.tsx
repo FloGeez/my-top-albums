@@ -18,7 +18,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useSpotifyAuth } from "@/hooks/use-spotify-auth";
 import { spotifyService, Album } from "@/lib/spotify";
-import { Music, RefreshCw } from "lucide-react";
+import { Music, RefreshCw, Save, Upload } from "lucide-react";
 
 interface SpotifySaveButtonProps {
   albums: Album[];
@@ -145,22 +145,22 @@ export function SpotifySaveButton({ albums }: SpotifySaveButtonProps) {
               <Button
                 onClick={handleSave}
                 disabled={isSaving || isCheckingPlaylist || albums.length === 0}
-                variant={
-                  isAuthenticated && existingPlaylist ? "default" : "outline"
-                }
-                size="default"
+                variant="outline"
+                size="sm"
                 className={`gap-2 ${
                   isAuthenticated && existingPlaylist
-                    ? "bg-green-600 hover:bg-green-700"
-                    : ""
+                    ? "text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {isSaving ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <RefreshCw className="w-3 h-3 animate-spin" />
                 ) : isCheckingPlaylist ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                ) : isAuthenticated && existingPlaylist ? (
+                  <Upload className="w-3 h-3" />
                 ) : (
-                  <Music className="w-4 h-4" />
+                  <Save className="w-3 h-3" />
                 )}
                 {isSaving
                   ? "Sauvegarde..."
