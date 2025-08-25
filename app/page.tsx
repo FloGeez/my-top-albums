@@ -31,6 +31,7 @@ import {
   Hand,
   Sparkles,
   HeartHandshake,
+  RefreshCw,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -900,8 +901,8 @@ export default function MusicApp() {
       </div>
 
       {/* Dock flottant en bas - Actions principales */}
-      {mounted && top50.length > 0 && (
-        <div className="fixed bottom-1 left-1/2 transform -translate-x-1/2 z-40 mb-6 shadow-lg">
+      {mounted && (
+        <div className="fixed bottom-1 left-1/2 transform -translate-x-1/2 z-40 p-2 pb-6 pt-0">
           <div className="bg-background/95 backdrop-blur-sm border shadow-lg rounded-full px-4 py-2">
             <TooltipProvider delayDuration={100}>
               <div className="flex items-center gap-2">
@@ -939,7 +940,7 @@ export default function MusicApp() {
                       size="icon"
                       className="text-muted-foreground hover:text-foreground hover:bg-accent"
                     >
-                      <Upload className="w-4 h-4" />
+                      <RefreshCw className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Charger depuis Spotify</TooltipContent>
@@ -1057,8 +1058,8 @@ const MemoizedSearchContent = React.memo(function SearchContent({
   mounted: boolean;
 }) {
   return (
-    <div className="flex flex-col h-full">
-      <div className="relative flex items-center max-w-xl mx-auto mb-8 flex-shrink-0">
+    <div className="flex flex-col h-full mx-4">
+      <div className="relative flex items-center w-full mb-8 flex-shrink-0">
         <Input
           type="text"
           placeholder="Rechercher un album ou un artiste..."
@@ -1531,8 +1532,8 @@ function FullscreenView({
           </div>
         </div>
 
-        <div className="w-1/4 p-12 overflow-y-auto">
-          <div className="space-y-1 text-xs font-mono text-foreground">
+        <div className="w-1/4 p-12 overflow-y-auto lg:block hidden">
+          <div className="space-y-1 text-[10px] font-mono text-foreground">
             {top50.map((album, index) => (
               <div key={album.id} className="leading-tight">
                 <span>
