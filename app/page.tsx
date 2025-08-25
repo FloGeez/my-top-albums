@@ -38,6 +38,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -515,377 +516,403 @@ export default function MusicApp() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-4 pb-4 pt-16 md:pt-4">
-        {/* Notification discrète pour playlist partagée */}
-        {sharedPlaylistId && isFromSharedLink && top50.length === 0 && (
-          <div className="max-w-md mx-auto mb-4">
-            <Alert className="border-blue-200 bg-blue-50">
-              <Music className="h-4 w-4" />
-              <AlertDescription className="flex items-center justify-between">
-                <span className="text-sm">Playlist partagée détectée</span>
-                <Button
-                  onClick={() => loadSharedPlaylist(sharedPlaylistId)}
-                  size="sm"
-                  variant="outline"
-                  className="ml-2"
-                >
-                  Charger
-                </Button>
-              </AlertDescription>
-            </Alert>
-          </div>
-        )}
-
-        {/* Header simplifié - Titre à gauche */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground">
-            Mon Top 50 Albums
-          </h1>
-          {top50.length > 0 && (
-            <p className="text-muted-foreground text-sm mt-1">
-              {top50.length} album{top50.length > 1 ? "s" : ""} dans votre
-              sélection
-            </p>
-          )}
-
-          {/* Indicateur de chargement subtil */}
-          {!mounted && (
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-8 mb-3">
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
-              <span>Chargement...</span>
-            </div>
-          )}
-        </div>
-
-        {/* Actions et paramètres - Barre d'outils discrète */}
-        <div
-          className="absolute top-4 right-4 flex items-center gap-1"
-          suppressHydrationWarning
-        >
-          {/* Outils secondaires */}
-          {mounted && (
-            <div className="flex items-center gap-1">
-              <TooltipProvider delayDuration={100}>
-                {/* Sauvegardes */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setIsBackupDialogOpen(true)}
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Historique et sauvegardes"
-                    >
-                      <Clock className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Historique et sauvegardes</TooltipContent>
-                </Tooltip>
-
-                {/* Thème */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                  aria-label="Changer le thème"
-                  suppressHydrationWarning
-                >
-                  {theme === "light" ? (
-                    <Moon className="w-4 h-4" />
-                  ) : (
-                    <Sun className="w-4 h-4" />
-                  )}
-                </Button>
-              </TooltipProvider>
+    <div className="h-screen bg-background flex flex-col">
+      {/* Header fixe */}
+      <div className="flex-shrink-0 p-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Notification discrète pour playlist partagée */}
+          {sharedPlaylistId && isFromSharedLink && top50.length === 0 && (
+            <div className="max-w-md mx-auto mb-4">
+              <Alert className="border-blue-200 bg-blue-50">
+                <Music className="h-4 w-4" />
+                <AlertDescription className="flex items-center justify-between">
+                  <span className="text-sm">Playlist partagée détectée</span>
+                  <Button
+                    onClick={() => loadSharedPlaylist(sharedPlaylistId)}
+                    size="sm"
+                    variant="outline"
+                    className="ml-2"
+                  >
+                    Charger
+                  </Button>
+                </AlertDescription>
+              </Alert>
             </div>
           )}
 
-          {/* Compte Spotify */}
-          <SpotifyAuth />
-        </div>
-
-        {/* Alert pour les données partagées */}
-        {sharedData && (
-          <Alert className="mb-8 max-w-2xl mx-auto border-blue-200 bg-blue-50">
-            <Music className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              <span>
-                Un top {sharedData.length} a été partagé avec vous ! Voulez-vous
-                l'importer ?
-              </span>
-              <div className="flex gap-2 ml-4">
-                <Button onClick={importSharedData} size="sm">
-                  Importer
-                </Button>
-                <Button
-                  onClick={() => setSharedData(null)}
-                  variant="outline"
-                  size="sm"
-                  className="bg-transparent"
-                >
-                  Ignorer
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Vue par onglets (mobile uniquement) */}
-        <div className="block md:hidden">
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            {!mounted ? (
-              <TabsSkeleton />
-            ) : (
-              <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-6">
-                <TabsTrigger
-                  value="top50"
-                  className="flex items-center gap-2 text-sm"
-                >
-                  <Star className="w-3 h-3" />
-                  {top50.length > 0 ? `Top 50 (${top50.length})` : "Mon Top 50"}
-                  {top50.length > 50 && (
-                    <TooltipProvider delayDuration={100}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <AlertTriangle className="w-3 h-3 text-yellow-500 ml-1" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Plus de 50 albums dans votre Top.
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger
-                  value="search"
-                  className="flex items-center gap-2 text-sm"
-                >
-                  <Plus className="w-3 h-3" />
-                  Ajouter
-                </TabsTrigger>
-              </TabsList>
+          {/* Header simplifié - Titre à gauche */}
+          <div className="mb-2">
+            <h1 className="text-2xl font-bold text-foreground">
+              Mon Top 50 Albums
+            </h1>
+            {top50.length > 0 && (
+              <p className="text-muted-foreground text-sm mt-1">
+                {top50.length} album{top50.length > 1 ? "s" : ""} dans votre
+                sélection
+              </p>
             )}
 
-            <TabsContent value="search" className="space-y-8">
-              {!mounted ? (
-                <SearchContentSkeleton />
-              ) : (
-                <MemoizedSearchContent
-                  mounted={mounted}
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  isLoading={isLoading}
-                  hasSearched={hasSearched}
-                  searchResults={searchResults}
-                  handleSearch={handleSearch}
-                  top50={top50}
-                  addToTop50={addToTop50} // Pass the function
-                  removeFromTop50={removeFromTop50} // Pass the function
-                />
-              )}
-            </TabsContent>
-
-            <TabsContent value="top50" className="space-y-8">
-              {!mounted ? (
-                <Top50ContentSkeleton />
-              ) : (
-                <MemoizedTop50Content
-                  top50={top50}
-                  setActiveTab={setActiveTab}
-                  sortMode={sortMode}
-                  sortDirection={sortDirection}
-                  handleSortToggle={handleSortToggle}
-                  handleManualSortToggle={handleManualSortToggle}
-                  setIsFullscreen={setIsFullscreen}
-                  setIsShareDialogOpen={setIsShareDialogOpen}
-                  clearTop50={clearTop50}
-                  removeFromTop50={removeFromTop50}
-                  handleDragStart={handleDragStart}
-                  handleDragOver={handleDragOver}
-                  handleDrop={handleDrop}
-                  handleDragEnd={handleDragEnd}
-                  draggedItem={draggedItem}
-                  getSortIcon={getSortIcon}
-                  getSortTooltipText={getSortTooltipText}
-                />
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* Vue en panneaux (desktop uniquement) */}
-        <div className="hidden md:block">
-          <div className="grid grid-cols-3 min-h-[80vh] border rounded-lg overflow-hidden">
-            {/* Panneau Recherche - Gauche */}
-            <div className="col-span-1">
-              <div className="p-6 h-full overflow-y-auto border-r">
-                <div className="flex items-center gap-2 mb-4">
-                  <Search className="w-4 h-4 text-primary" />
-                  <h2 className="text-lg font-medium">Recherche d'albums</h2>
-                </div>
-                {!mounted ? (
-                  <SearchContentSkeleton />
-                ) : (
-                  <MemoizedSearchContent
-                    mounted={mounted}
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    isLoading={isLoading}
-                    hasSearched={hasSearched}
-                    searchResults={searchResults}
-                    handleSearch={handleSearch}
-                    top50={top50}
-                    addToTop50={addToTop50}
-                    removeFromTop50={removeFromTop50}
-                  />
-                )}
+            {/* Indicateur de chargement subtil */}
+            {!mounted && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-8 mb-3">
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                <span>Chargement...</span>
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* Panneau Top 50 - Droite */}
-            <div className="col-span-2">
-              <div className="p-6 h-full overflow-y-auto">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-primary" />
-                    <h2 className="text-lg font-medium flex items-center">
-                      {top50.length > 0
-                        ? `Top 50 (${top50.length})`
-                        : "Mon Top 50"}
-                      {top50.length > 50 && (
-                        <TooltipProvider delayDuration={100}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <AlertTriangle className="w-4 h-4 text-yellow-500 ml-2" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Plus de 50 albums dans votre Top.
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                    </h2>
-                  </div>
+          {/* Actions et paramètres - Barre d'outils discrète */}
+          <div
+            className="absolute top-4 right-4 flex items-center gap-1"
+            suppressHydrationWarning
+          >
+            {/* Outils secondaires */}
+            {mounted && (
+              <div className="flex items-center gap-1">
+                <TooltipProvider delayDuration={100}>
+                  {/* Sauvegardes */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => setIsBackupDialogOpen(true)}
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Historique et sauvegardes"
+                      >
+                        <Clock className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Historique et sauvegardes</TooltipContent>
+                  </Tooltip>
 
-                  {/* Contrôles desktop - seulement si contenu */}
-                  {top50.length > 0 && (
-                    <div className="flex items-center gap-1">
+                  {/* Thème */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      setTheme(theme === "light" ? "dark" : "light")
+                    }
+                    aria-label="Changer le thème"
+                    suppressHydrationWarning
+                  >
+                    {theme === "light" ? (
+                      <Moon className="w-4 h-4" />
+                    ) : (
+                      <Sun className="w-4 h-4" />
+                    )}
+                  </Button>
+                </TooltipProvider>
+              </div>
+            )}
+
+            {/* Compte Spotify */}
+            <SpotifyAuth />
+          </div>
+
+          {/* Alert pour les données partagées */}
+          {sharedData && (
+            <Alert className="mb-8 max-w-2xl mx-auto border-blue-200 bg-blue-50">
+              <Music className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <span>
+                  Un top {sharedData.length} a été partagé avec vous !
+                  Voulez-vous l'importer ?
+                </span>
+                <div className="flex gap-2 ml-4">
+                  <Button onClick={importSharedData} size="sm">
+                    Importer
+                  </Button>
+                  <Button
+                    onClick={() => setSharedData(null)}
+                    variant="outline"
+                    size="sm"
+                    className="bg-transparent"
+                  >
+                    Ignorer
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      </div>
+
+      {/* Vue en panneaux (desktop uniquement) */}
+
+      {/* Contenu principal - Prend toute la hauteur restante */}
+      <div className="flex-1 min-h-0 px-4 pb-14">
+        <div className="max-w-7xl mx-auto h-full">
+          {/* Vue par onglets (mobile uniquement) */}
+          <div className="block md:hidden h-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="h-full flex flex-col"
+            >
+              {!mounted ? (
+                <TabsSkeleton />
+              ) : (
+                <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-6 flex-shrink-0">
+                  <TabsTrigger
+                    value="top50"
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <Star className="w-3 h-3" />
+                    {top50.length > 0
+                      ? `Top 50 (${top50.length})`
+                      : "Mon Top 50"}
+                    {top50.length > 50 && (
                       <TooltipProvider delayDuration={100}>
-                        {/* Tri */}
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button
-                              onClick={handleSortToggle}
-                              variant="ghost"
-                              size="sm"
-                              className="gap-1 text-muted-foreground hover:text-foreground"
-                              aria-label={getSortTooltipText()}
-                            >
-                              {getSortIcon()}
-                              <span className="text-xs">
-                                {sortMode === "manual"
-                                  ? "Manuel"
-                                  : sortDirection === "desc"
-                                  ? "↓ Date"
-                                  : "↑ Date"}
-                              </span>
-                            </Button>
+                            <AlertTriangle className="w-3 h-3 text-yellow-500 ml-1" />
                           </TooltipTrigger>
                           <TooltipContent>
-                            {getSortTooltipText()}
+                            Plus de 50 albums dans votre Top.
                           </TooltipContent>
                         </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="search"
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Ajouter
+                  </TabsTrigger>
+                </TabsList>
+              )}
 
-                        {/* Tri manuel si en mode date */}
-                        {sortMode === "date" && (
+              <TabsContent value="search" className="h-full flex-1">
+                <div className="h-full pb-20 p-1 flex flex-col">
+                  {!mounted ? (
+                    <SearchContentSkeleton />
+                  ) : (
+                    <MemoizedSearchContent
+                      mounted={mounted}
+                      searchQuery={searchQuery}
+                      setSearchQuery={setSearchQuery}
+                      isLoading={isLoading}
+                      hasSearched={hasSearched}
+                      searchResults={searchResults}
+                      handleSearch={handleSearch}
+                      top50={top50}
+                      addToTop50={addToTop50}
+                      removeFromTop50={removeFromTop50}
+                    />
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="top50" className="h-full flex-1">
+                <div className="h-full overflow-hidden">
+                  <ScrollArea className="h-full">
+                    <div className="space-y-8 p-1">
+                      {!mounted ? (
+                        <Top50ContentSkeleton />
+                      ) : (
+                        <MemoizedTop50Content
+                          top50={top50}
+                          setActiveTab={setActiveTab}
+                          sortMode={sortMode}
+                          sortDirection={sortDirection}
+                          handleSortToggle={handleSortToggle}
+                          handleManualSortToggle={handleManualSortToggle}
+                          setIsFullscreen={setIsFullscreen}
+                          setIsShareDialogOpen={setIsShareDialogOpen}
+                          clearTop50={clearTop50}
+                          removeFromTop50={removeFromTop50}
+                          handleDragStart={handleDragStart}
+                          handleDragOver={handleDragOver}
+                          handleDrop={handleDrop}
+                          handleDragEnd={handleDragEnd}
+                          draggedItem={draggedItem}
+                          getSortIcon={getSortIcon}
+                          getSortTooltipText={getSortTooltipText}
+                        />
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Vue en panneaux (desktop uniquement) */}
+          <div className="hidden md:block h-full">
+            <div className="grid grid-cols-3 h-full border rounded-lg overflow-hidden">
+              {/* Panneau Recherche - Gauche */}
+              <div className="col-span-1 flex flex-col min-h-0">
+                <div className="py-6 flex-1 border-r">
+                  <div className="px-6 flex items-center gap-2 mb-4">
+                    <Search className="w-4 h-4 text-primary" />
+                    <h2 className="text-lg font-medium">Recherche d'albums</h2>
+                  </div>
+                  <div className="h-full p-1 flex flex-col">
+                    {!mounted ? (
+                      <SearchContentSkeleton />
+                    ) : (
+                      <MemoizedSearchContent
+                        mounted={mounted}
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        isLoading={isLoading}
+                        hasSearched={hasSearched}
+                        searchResults={searchResults}
+                        handleSearch={handleSearch}
+                        top50={top50}
+                        addToTop50={addToTop50}
+                        removeFromTop50={removeFromTop50}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Panneau Top 50 - Droite */}
+              <div className="col-span-2 flex flex-col min-h-0">
+                <div className="p-6 flex-1">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-primary" />
+                      <h2 className="text-lg font-medium flex items-center">
+                        {top50.length > 0
+                          ? `Top 50 (${top50.length})`
+                          : "Mon Top 50"}
+                        {top50.length > 50 && (
+                          <TooltipProvider delayDuration={100}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertTriangle className="w-4 h-4 text-yellow-500 ml-2" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Plus de 50 albums dans votre Top.
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </h2>
+                    </div>
+
+                    {/* Contrôles desktop - seulement si contenu */}
+                    {top50.length > 0 && (
+                      <div className="flex items-center gap-1">
+                        <TooltipProvider delayDuration={100}>
+                          {/* Tri */}
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
-                                onClick={handleManualSortToggle}
+                                onClick={handleSortToggle}
                                 variant="ghost"
                                 size="sm"
                                 className="gap-1 text-muted-foreground hover:text-foreground"
-                                aria-label="Activer le tri manuel"
+                                aria-label={getSortTooltipText()}
                               >
-                                <Hand className="w-3 h-3" />
-                                <span className="text-xs">Manuel</span>
+                                {getSortIcon()}
+                                <span className="text-xs">
+                                  {sortMode === "manual"
+                                    ? "Manuel"
+                                    : sortDirection === "desc"
+                                    ? "↓ Date"
+                                    : "↑ Date"}
+                                </span>
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                              Réorganiser manuellement
+                              {getSortTooltipText()}
                             </TooltipContent>
                           </Tooltip>
-                        )}
 
-                        {/* Séparateur */}
-                        <div className="w-px h-4 bg-border mx-2"></div>
+                          {/* Tri manuel si en mode date */}
+                          {sortMode === "date" && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  onClick={handleManualSortToggle}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="gap-1 text-muted-foreground hover:text-foreground"
+                                  aria-label="Activer le tri manuel"
+                                >
+                                  <Hand className="w-3 h-3" />
+                                  <span className="text-xs">Manuel</span>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Réorganiser manuellement
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
 
-                        {/* Vider le Top 50 */}
-                        <Tooltip>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                aria-label="Vider le Top 50"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                                <span className="text-xs">Vider</span>
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Êtes-vous absolument sûr ?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Cette action supprimera définitivement tous
-                                  les albums de votre Top 50. Cette action est
-                                  irréversible.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                <AlertDialogAction onClick={clearTop50}>
-                                  Vider le Top 50
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                          <TooltipContent>Vider le Top 50</TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  )}
+                          {/* Séparateur */}
+                          <div className="w-px h-4 bg-border mx-2"></div>
+
+                          {/* Vider le Top 50 */}
+                          <Tooltip>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  aria-label="Vider le Top 50"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                  <span className="text-xs">Vider</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Êtes-vous absolument sûr ?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Cette action supprimera définitivement tous
+                                    les albums de votre Top 50. Cette action est
+                                    irréversible.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                  <AlertDialogAction onClick={clearTop50}>
+                                    Vider le Top 50
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            <TooltipContent>Vider le Top 50</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    )}
+                  </div>
+                  <div className="h-full p-1 flex flex-col">
+                    {!mounted ? (
+                      <Top50ContentSkeleton />
+                    ) : (
+                      <MemoizedTop50Content
+                        top50={top50}
+                        setActiveTab={setActiveTab}
+                        sortMode={sortMode}
+                        sortDirection={sortDirection}
+                        handleSortToggle={handleSortToggle}
+                        handleManualSortToggle={handleManualSortToggle}
+                        setIsFullscreen={setIsFullscreen}
+                        setIsShareDialogOpen={setIsShareDialogOpen}
+                        clearTop50={clearTop50}
+                        removeFromTop50={removeFromTop50}
+                        handleDragStart={handleDragStart}
+                        handleDragOver={handleDragOver}
+                        handleDrop={handleDrop}
+                        handleDragEnd={handleDragEnd}
+                        draggedItem={draggedItem}
+                        getSortIcon={getSortIcon}
+                        getSortTooltipText={getSortTooltipText}
+                      />
+                    )}
+                  </div>
                 </div>
-                {!mounted ? (
-                  <Top50ContentSkeleton />
-                ) : (
-                  <MemoizedTop50Content
-                    top50={top50}
-                    setActiveTab={setActiveTab}
-                    sortMode={sortMode}
-                    sortDirection={sortDirection}
-                    handleSortToggle={handleSortToggle}
-                    handleManualSortToggle={handleManualSortToggle}
-                    setIsFullscreen={setIsFullscreen}
-                    setIsShareDialogOpen={setIsShareDialogOpen}
-                    clearTop50={clearTop50}
-                    removeFromTop50={removeFromTop50}
-                    handleDragStart={handleDragStart}
-                    handleDragOver={handleDragOver}
-                    handleDrop={handleDrop}
-                    handleDragEnd={handleDragEnd}
-                    draggedItem={draggedItem}
-                    getSortIcon={getSortIcon}
-                    getSortTooltipText={getSortTooltipText}
-                  />
-                )}
               </div>
             </div>
           </div>
@@ -894,7 +921,7 @@ export default function MusicApp() {
 
       {/* Dock flottant en bas - Actions principales */}
       {mounted && top50.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
+        <div className="fixed bottom-1 left-1/2 transform -translate-x-1/2 z-40 mb-6 shadow-lg">
           <div className="bg-background/95 backdrop-blur-sm border shadow-lg rounded-full px-4 py-2">
             <TooltipProvider delayDuration={100}>
               <div className="flex items-center gap-2">
@@ -988,8 +1015,8 @@ const MemoizedSearchContent = React.memo(function SearchContent({
   mounted: boolean;
 }) {
   return (
-    <div className="space-y-8">
-      <div className="relative flex items-center max-w-xl mx-auto">
+    <div className="flex flex-col h-full">
+      <div className="relative flex items-center max-w-xl mx-auto mb-8 flex-shrink-0">
         <Input
           type="text"
           placeholder="Rechercher un album ou un artiste..."
@@ -1014,40 +1041,47 @@ const MemoizedSearchContent = React.memo(function SearchContent({
           )}
         </Button>
       </div>
-
-      {isLoading ? (
-        <div className="grid gap-4 grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <AlbumSkeleton key={i} />
-          ))}
-        </div>
-      ) : hasSearched && searchResults.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <Music className="w-12 h-12 mx-auto mb-4 opacity-60" />
-          <p className="text-base">Aucun résultat trouvé</p>
-          <p className="text-sm mt-1">Essayez un autre terme de recherche</p>
-        </div>
-      ) : searchResults.length > 0 ? (
-        <div className="grid gap-4 grid-cols-2 xl:grid-cols-3">
-          {searchResults.map((album) => (
-            <AlbumCard
-              key={album.id}
-              album={album}
-              onAdd={() => addToTop50(album)} // Use the passed function
-              onRemove={() => removeFromTop50(album.id)} // Use the passed function
-              isInTop50={top50.some((a) => a.id === album.id)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12 text-muted-foreground">
-          <HeartHandshake className="w-12 h-12 mx-auto mb-4 opacity-60" />
-          <p className="text-base">Découvrez vos albums préférés</p>
-          <p className="text-sm mt-1">
-            Commencez par taper le nom d'un artiste ou d'un album
-          </p>
-        </div>
-      )}
+      <div className="h-[calc(100vh-320px)] overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="space-y-8 px-6">
+            {isLoading ? (
+              <div className="grid gap-4 grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <AlbumSkeleton key={i} />
+                ))}
+              </div>
+            ) : hasSearched && searchResults.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Music className="w-12 h-12 mx-auto mb-4 opacity-60" />
+                <p className="text-base">Aucun résultat trouvé</p>
+                <p className="text-sm mt-1">
+                  Essayez un autre terme de recherche
+                </p>
+              </div>
+            ) : searchResults.length > 0 ? (
+              <div className="grid gap-4 grid-cols-2 xl:grid-cols-3">
+                {searchResults.map((album) => (
+                  <AlbumCard
+                    key={album.id}
+                    album={album}
+                    onAdd={() => addToTop50(album)} // Use the passed function
+                    onRemove={() => removeFromTop50(album.id)} // Use the passed function
+                    isInTop50={top50.some((a) => a.id === album.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <HeartHandshake className="w-12 h-12 mx-auto mb-4 opacity-60" />
+                <p className="text-base">Découvrez vos albums préférés</p>
+                <p className="text-sm mt-1">
+                  Commencez par taper le nom d'un artiste ou d'un album
+                </p>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 });
@@ -1091,156 +1125,165 @@ const MemoizedTop50Content = React.memo(function Top50Content({
   getSortTooltipText: () => string;
 }) {
   return (
-    <div className="space-y-8">
-      {top50.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-          <div className="mb-6">
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Sparkles className="w-8 h-8 text-primary/60" />
-            </div>
-            <h2 className="text-2xl font-semibold text-foreground mb-3">
-              Votre Top 50 vous attend
-            </h2>
-            <p className="text-muted-foreground max-w-xs mx-auto text-sm">
-              Commencez par rechercher et ajouter vos albums préférés
-            </p>
-          </div>
+    <div className="flex flex-col h-full">
+      <div className="h-[calc(100vh-260px)] overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="space-y-8 px-6">
+            {top50.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+                <div className="mb-6">
+                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Sparkles className="w-8 h-8 text-primary/60" />
+                  </div>
+                  <h2 className="text-2xl font-semibold text-foreground mb-3">
+                    Votre Top 50 vous attend
+                  </h2>
+                  <p className="text-muted-foreground max-w-xs mx-auto text-sm">
+                    Commencez par rechercher et ajouter vos albums préférés
+                  </p>
+                </div>
 
-          {/* Bouton mobile uniquement */}
-          <div className="md:hidden">
-            <Button
-              onClick={() => setActiveTab("search")}
-              size="lg"
-              className="gap-2 px-8"
-            >
-              <Search className="w-4 h-4" />
-              Rechercher des albums
-            </Button>
-          </div>
-
-          {/* Instructions desktop */}
-          <div className="hidden md:block">
-            <p className="text-sm text-muted-foreground opacity-75">
-              Utilisez le panneau de recherche pour commencer →
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {/* Contrôles mobiles uniquement - masqués sur desktop */}
-          <div className="md:hidden flex items-center justify-center gap-1 mb-4">
-            <TooltipProvider delayDuration={100}>
-              {/* Tri */}
-              <Tooltip>
-                <TooltipTrigger asChild>
+                {/* Bouton mobile uniquement */}
+                <div className="md:hidden">
                   <Button
-                    onClick={handleSortToggle}
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1 text-muted-foreground hover:text-foreground"
-                    aria-label={getSortTooltipText()}
+                    onClick={() => setActiveTab("search")}
+                    size="lg"
+                    className="gap-2 px-8"
                   >
-                    {getSortIcon()}
-                    <span className="text-xs">
-                      {sortMode === "manual"
-                        ? "Manuel"
-                        : sortDirection === "desc"
-                        ? "↓ Date"
-                        : "↑ Date"}
-                    </span>
+                    <Search className="w-4 h-4" />
+                    Rechercher des albums
                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>{getSortTooltipText()}</TooltipContent>
-              </Tooltip>
+                </div>
 
-              {/* Tri manuel si en mode date */}
-              {sortMode === "date" && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={handleManualSortToggle}
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 text-muted-foreground hover:text-foreground"
-                      aria-label="Activer le tri manuel"
-                    >
-                      <Hand className="w-3 h-3" />
-                      <span className="text-xs">Manuel</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Réorganiser manuellement</TooltipContent>
-                </Tooltip>
-              )}
+                {/* Instructions desktop */}
+                <div className="hidden md:block">
+                  <p className="text-sm text-muted-foreground opacity-75">
+                    Utilisez le panneau de recherche pour commencer →
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {/* Contrôles mobiles uniquement - masqués sur desktop */}
+                <div className="md:hidden flex items-center justify-center gap-1 mb-4">
+                  <TooltipProvider delayDuration={100}>
+                    {/* Tri */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={handleSortToggle}
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1 text-muted-foreground hover:text-foreground"
+                          aria-label={getSortTooltipText()}
+                        >
+                          {getSortIcon()}
+                          <span className="text-xs">
+                            {sortMode === "manual"
+                              ? "Manuel"
+                              : sortDirection === "desc"
+                              ? "↓ Date"
+                              : "↑ Date"}
+                          </span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{getSortTooltipText()}</TooltipContent>
+                    </Tooltip>
 
-              {/* Séparateur */}
-              <div className="w-px h-4 bg-border mx-2"></div>
+                    {/* Tri manuel si en mode date */}
+                    {sortMode === "date" && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            onClick={handleManualSortToggle}
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-muted-foreground hover:text-foreground"
+                            aria-label="Activer le tri manuel"
+                          >
+                            <Hand className="w-3 h-3" />
+                            <span className="text-xs">Manuel</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Réorganiser manuellement
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
 
-              {/* Vider le Top 50 - mobile */}
-              <Tooltip>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      aria-label="Vider le Top 50"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      <span className="text-xs">Vider</span>
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Êtes-vous absolument sûr ?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Cette action supprimera définitivement tous les albums
-                        de votre Top 50. Cette action est irréversible.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction onClick={clearTop50}>
-                        Vider le Top 50
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                <TooltipContent>Vider le Top 50</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
+                    {/* Séparateur */}
+                    <div className="w-px h-4 bg-border mx-2"></div>
 
-          {/* Instructions pour le tri manuel */}
-          <div className="mb-4">
-            {sortMode === "manual" && (
-              <p className="text-sm text-muted-foreground text-center">
-                Glissez-déposez les albums pour les réorganiser
-              </p>
+                    {/* Vider le Top 50 - mobile */}
+                    <Tooltip>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            aria-label="Vider le Top 50"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span className="text-xs">Vider</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Êtes-vous absolument sûr ?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Cette action supprimera définitivement tous les
+                              albums de votre Top 50. Cette action est
+                              irréversible.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                            <AlertDialogAction onClick={clearTop50}>
+                              Vider le Top 50
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      <TooltipContent>Vider le Top 50</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+
+                {/* Instructions pour le tri manuel */}
+                {sortMode === "manual" && (
+                  <div className="mb-4">
+                    <p className="text-sm text-muted-foreground text-center">
+                      Glissez-déposez les albums pour les réorganiser
+                    </p>
+                  </div>
+                )}
+
+                <div
+                  className={`grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6`}
+                >
+                  {top50.map((album, index) => (
+                    <CompactRankedAlbumCard
+                      key={album.id}
+                      album={album}
+                      rank={index + 1}
+                      onRemove={() => removeFromTop50(album.id)}
+                      isDraggable={sortMode === "manual"}
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
+                      isDragging={draggedItem === index}
+                    />
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-
-          <div
-            className={`grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6`}
-          >
-            {top50.map((album, index) => (
-              <CompactRankedAlbumCard
-                key={album.id}
-                album={album}
-                rank={index + 1}
-                onRemove={() => removeFromTop50(album.id)}
-                isDraggable={sortMode === "manual"}
-                onDragStart={(e) => handleDragStart(e, index)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, index)}
-                onDragEnd={handleDragEnd}
-                isDragging={draggedItem === index}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+        </ScrollArea>
+      </div>
     </div>
   );
 });
@@ -1346,7 +1389,7 @@ function CompactRankedAlbumCard({
       onDrop={(e) => onDrop?.(e, 0)}
       onDragEnd={onDragEnd}
     >
-      <div className="relative overflow-hidden rounded-lg group-hover:rounded-b-none transition-all duration-300">
+      <div className="relative overflow-hidden rounded-lg group-hover:rounded-b-none transition-all duration-300 h-full">
         <Image
           src={album.cover || "/placeholder.svg"}
           alt={`${album.title} by ${album.artist}`}

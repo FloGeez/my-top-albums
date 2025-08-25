@@ -143,7 +143,7 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
       updateExistingPlaylist(result.playlist);
 
       // Pas de mise à jour d'URL automatique pour notre propre sauvegarde
-      toast({
+            toast({
         title: result.isUpdate ? "Playlist mise à jour !" : "Playlist créée !",
         description: `${result.tracksAdded} morceaux ${
           result.isUpdate ? "mis à jour dans" : "ajoutés à"
@@ -218,8 +218,8 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
               ) : (
                 <Copy className="w-4 h-4 mr-2" />
               )}
-              Copier le texte
-            </Button>
+                Copier le texte
+              </Button>
             <p className="text-sm text-gray-500">
               Parfait pour partager sur les réseaux sociaux, forums ou par
               message
@@ -262,12 +262,12 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
                       👥 <strong>Vos amis pourront découvrir</strong> vos albums
                       favoris facilement
                     </p>
-                  </div>
+            </div>
                   <Button onClick={login} variant="default" className="gap-2">
                     <Music className="w-4 h-4" />
                     Se connecter à Spotify
-                  </Button>
-                </div>
+              </Button>
+            </div>
               ) : createdPlaylist ? (
                 <div className="text-center py-6">
                   <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
@@ -286,8 +286,8 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
                       <p>
                         🔄 <strong>Nous le maintenons à jour</strong>{" "}
                         automatiquement
-                      </p>
-                    </div>
+                </p>
+              </div>
 
                     <div className="flex gap-2 justify-center">
                       <Button
@@ -323,7 +323,7 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
                       </Button>
                     </div>
                   </div>
-                </div>
+                            </div>
               ) : isSpotifyAuthenticated && existingPlaylist ? (
                 <div className="text-center py-6">
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
@@ -344,7 +344,7 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
                         🔄 <strong>Mettez à jour</strong> avec vos nouveaux
                         albums
                       </p>
-                    </div>
+                      </div>
 
                     <div className="flex gap-2 justify-center">
                       <Button
@@ -404,7 +404,7 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
                       🔄 <strong>Nous le gardons à jour</strong> avec vos
                       modifications
                     </p>
-                  </div>
+              </div>
                   <div className="flex gap-2 justify-center">
                     <Button
                       onClick={createOrUpdateSpotifyPlaylist}
@@ -415,16 +415,16 @@ export function ShareDialog({ isOpen, onClose, albums }: ShareDialogProps) {
                         <>
                           <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                           Création...
-                        </>
-                      ) : (
-                        <>
+                  </>
+                ) : (
+                  <>
                           <Music className="w-4 h-4" />
                           Créer la playlist
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
+                  </>
+                )}
+              </Button>
+            </div>
+            </div>
               )}
             </div>
           </TabsContent>

@@ -287,13 +287,13 @@ class SpotifyService {
       const response = await fetch(
         `https://api.spotify.com/v1/albums/${albumId}/tracks?limit=50&market=US`,
         {
-          headers: {
+      headers: {
             Authorization: `Bearer ${token}`,
-          },
+      },
         }
       );
 
-      if (!response.ok) {
+    if (!response.ok) {
         const errorData = await response.json();
         console.error("Failed to get album tracks:", errorData);
         throw new Error(
@@ -349,16 +349,16 @@ class SpotifyService {
     const response = await fetch(
       `https://api.spotify.com/v1/users/${userId}/playlists`,
       {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.userAccessToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          description,
-          public: true,
-        }),
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.userAccessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name,
+        description,
+        public: true,
+      }),
       }
     );
 
@@ -396,14 +396,14 @@ class SpotifyService {
       const response = await fetch(
         `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
         {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${this.userAccessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            uris: chunk,
-          }),
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.userAccessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          uris: chunk,
+        }),
         }
       );
 
