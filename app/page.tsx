@@ -92,6 +92,7 @@ export default function MusicApp() {
     null
   );
   const [isBackupDialogOpen, setIsBackupDialogOpen] = useState(false);
+  const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
   const [hasLoadedFromSpotify, setHasLoadedFromSpotify] = useState(false);
   const { theme, setTheme } = useTheme();
   const { isAuthenticated, login } = useSpotifyAuth();
@@ -486,6 +487,11 @@ export default function MusicApp() {
     }
   };
 
+  // Fonction pour gérer le bouton de chargement (ouvrir la modale)
+  const handleLoadButton = () => {
+    setIsLoadDialogOpen(true);
+  };
+
   // Fonction pour charger une playlist partagée
   const loadSharedPlaylist = async (playlistId: string) => {
     try {
@@ -554,7 +560,7 @@ export default function MusicApp() {
 
             {/* Indicateur de chargement subtil */}
             {!mounted && (
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-8 mb-3">
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
                 <span>Chargement...</span>
               </div>
@@ -665,7 +671,7 @@ export default function MusicApp() {
                       <TooltipProvider delayDuration={100}>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <AlertTriangle className="w-3 h-3 text-yellow-500 ml-1" />
+                            <AlertTriangle className="w-3 h-3 text-yellow-500" />
                           </TooltipTrigger>
                           <TooltipContent>
                             Plus de 50 albums dans votre Top.
@@ -776,7 +782,7 @@ export default function MusicApp() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Star className="w-4 h-4 text-primary" />
-                      <h2 className="text-lg font-medium flex items-center">
+                      <h2 className="text-lg font-medium flex items-center gap-2 group">
                         {top50.length > 0
                           ? `Top 50 (${top50.length})`
                           : "Mon Top 50"}
@@ -784,13 +790,52 @@ export default function MusicApp() {
                           <TooltipProvider delayDuration={100}>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <AlertTriangle className="w-4 h-4 text-yellow-500 ml-2" />
+                                <AlertTriangle className="w-4 h-4 text-yellow-500" />
                               </TooltipTrigger>
                               <TooltipContent>
                                 Plus de 50 albums dans votre Top.
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
+                        )}
+                        {top50.length > 0 && (
+                          <AlertDialog>
+                            <TooltipProvider delayDuration={100}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                      aria-label="Vider le Top 50"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>Vider le Top 50</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Êtes-vous absolument sûr ?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Cette action supprimera définitivement tous
+                                  les albums de votre Top 50. Cette action est
+                                  irréversible.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                <AlertDialogAction onClick={clearTop50}>
+                                  Vider le Top 50
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                       </h2>
                     </div>
@@ -799,90 +844,25 @@ export default function MusicApp() {
                     {top50.length > 0 && (
                       <div className="flex items-center gap-1">
                         <TooltipProvider delayDuration={100}>
-                          {/* Tri */}
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                onClick={handleSortToggle}
-                                variant="ghost"
-                                size="sm"
-                                className="gap-1 text-muted-foreground hover:text-foreground"
-                                aria-label={getSortTooltipText()}
-                              >
-                                {getSortIcon()}
-                                <span className="text-xs">
-                                  {sortMode === "manual"
-                                    ? "Manuel"
-                                    : sortDirection === "desc"
-                                    ? "↓ Date"
-                                    : "↑ Date"}
-                                </span>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {getSortTooltipText()}
-                            </TooltipContent>
-                          </Tooltip>
+                          <TriButton
+                            onClick={handleSortToggle}
+                            sortMode={sortMode}
+                            sortDirection={sortDirection}
+                            getSortIcon={getSortIcon}
+                            getSortTooltipText={getSortTooltipText}
+                          />
 
                           {/* Tri manuel si en mode date */}
                           {sortMode === "date" && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  onClick={handleManualSortToggle}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="gap-1 text-muted-foreground hover:text-foreground"
-                                  aria-label="Activer le tri manuel"
-                                >
-                                  <Hand className="w-3 h-3" />
-                                  <span className="text-xs">Manuel</span>
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                Réorganiser manuellement
-                              </TooltipContent>
-                            </Tooltip>
+                            <TriManuelButton onClick={handleManualSortToggle} />
                           )}
 
                           {/* Séparateur */}
                           <div className="w-px h-4 bg-border mx-2"></div>
 
-                          {/* Vider le Top 50 */}
-                          <Tooltip>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                  aria-label="Vider le Top 50"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                  <span className="text-xs">Vider</span>
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    Êtes-vous absolument sûr ?
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Cette action supprimera définitivement tous
-                                    les albums de votre Top 50. Cette action est
-                                    irréversible.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                  <AlertDialogAction onClick={clearTop50}>
-                                    Vider le Top 50
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                            <TooltipContent>Vider le Top 50</TooltipContent>
-                          </Tooltip>
+                          <PleinEcranButton
+                            onClick={() => setIsFullscreen(true)}
+                          />
                         </TooltipProvider>
                       </div>
                     )}
@@ -950,19 +930,19 @@ export default function MusicApp() {
                   <TooltipContent>Partager votre Top 50</TooltipContent>
                 </Tooltip>
 
-                {/* Plein écran */}
+                {/* Charger */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      onClick={() => setIsFullscreen(true)}
+                      onClick={handleLoadButton}
                       variant="ghost"
                       size="icon"
                       className="text-muted-foreground hover:text-foreground hover:bg-accent"
                     >
-                      <Maximize className="w-4 h-4" />
+                      <Upload className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>Mode plein écran</TooltipContent>
+                  <TooltipContent>Charger depuis Spotify</TooltipContent>
                 </Tooltip>
               </div>
             </TooltipProvider>
@@ -982,6 +962,68 @@ export default function MusicApp() {
         onRestore={handleRestoreBackup}
         currentAlbums={top50}
       />
+
+      {/* Modale de chargement depuis Spotify */}
+      <AlertDialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Charger depuis Spotify</AlertDialogTitle>
+            <AlertDialogDescription>
+              {isAuthenticated ? (
+                <div className="space-y-4">
+                  <p>
+                    Voulez-vous charger votre Top 50 depuis votre playlist
+                    Spotify ?
+                  </p>
+                  <div className="bg-muted/50 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Cette action remplacera votre Top 50 actuel par celui de
+                      votre playlist Spotify.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p>
+                    Pour charger votre Top 50 depuis Spotify, vous devez d'abord
+                    vous connecter.
+                  </p>
+                  <div className="bg-muted/50 p-3 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Vous serez redirigé vers Spotify pour autoriser l'accès à
+                      vos playlists.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (isAuthenticated) {
+                  toast({
+                    title: "Chargement en cours...",
+                    description: "Récupération de votre Top 50 depuis Spotify",
+                  });
+                  loadOwnPlaylist();
+                } else {
+                  toast({
+                    title: "Connexion requise",
+                    description:
+                      "Vous allez être redirigé vers Spotify pour vous connecter",
+                  });
+                  setTimeout(() => login(), 1000);
+                }
+                setIsLoadDialogOpen(false);
+              }}
+            >
+              {isAuthenticated ? "Charger" : "Se connecter"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {isFullscreen && (
         <FullscreenView top50={top50} onClose={() => setIsFullscreen(false)} />
@@ -1167,88 +1209,28 @@ const MemoizedTop50Content = React.memo(function Top50Content({
                 {/* Contrôles mobiles uniquement - masqués sur desktop */}
                 <div className="md:hidden flex items-center justify-center gap-1 mb-4">
                   <TooltipProvider delayDuration={100}>
-                    {/* Tri */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          onClick={handleSortToggle}
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1 text-muted-foreground hover:text-foreground"
-                          aria-label={getSortTooltipText()}
-                        >
-                          {getSortIcon()}
-                          <span className="text-xs">
-                            {sortMode === "manual"
-                              ? "Manuel"
-                              : sortDirection === "desc"
-                              ? "↓ Date"
-                              : "↑ Date"}
-                          </span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{getSortTooltipText()}</TooltipContent>
-                    </Tooltip>
+                    <ViderButton onClear={clearTop50} size="icon" />
+
+                    {/* Séparateur */}
+                    <div className="w-px h-4 bg-border mx-2"></div>
+
+                    <TriButton
+                      onClick={handleSortToggle}
+                      sortMode={sortMode}
+                      sortDirection={sortDirection}
+                      getSortIcon={getSortIcon}
+                      getSortTooltipText={getSortTooltipText}
+                    />
 
                     {/* Tri manuel si en mode date */}
                     {sortMode === "date" && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            onClick={handleManualSortToggle}
-                            variant="ghost"
-                            size="sm"
-                            className="gap-1 text-muted-foreground hover:text-foreground"
-                            aria-label="Activer le tri manuel"
-                          >
-                            <Hand className="w-3 h-3" />
-                            <span className="text-xs">Manuel</span>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Réorganiser manuellement
-                        </TooltipContent>
-                      </Tooltip>
+                      <TriManuelButton onClick={handleManualSortToggle} />
                     )}
 
                     {/* Séparateur */}
                     <div className="w-px h-4 bg-border mx-2"></div>
 
-                    {/* Vider le Top 50 - mobile */}
-                    <Tooltip>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            aria-label="Vider le Top 50"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            <span className="text-xs">Vider</span>
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              Êtes-vous absolument sûr ?
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Cette action supprimera définitivement tous les
-                              albums de votre Top 50. Cette action est
-                              irréversible.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction onClick={clearTop50}>
-                              Vider le Top 50
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                      <TooltipContent>Vider le Top 50</TooltipContent>
-                    </Tooltip>
+                    <PleinEcranButton onClick={() => setIsFullscreen(true)} />
                   </TooltipProvider>
                 </div>
 
@@ -1564,3 +1546,133 @@ function FullscreenView({
     </div>
   );
 }
+
+// Composants réutilisables pour les actions
+const ViderButton = React.memo(function ViderButton({
+  onClear,
+  size = "sm",
+  showText = false,
+}: {
+  onClear: () => void;
+  size?: "sm" | "icon";
+  showText?: boolean;
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size={size}
+          className={`gap-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 ${
+            size === "icon" ? "h-8 w-8 p-0" : ""
+          }`}
+          aria-label="Vider le Top 50"
+        >
+          <Trash2 className="w-3 h-3" />
+          {showText && <span className="text-xs">Vider</span>}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Êtes-vous absolument sûr ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Cette action supprimera définitivement tous les albums de votre Top
+            50. Cette action est irréversible.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Annuler</AlertDialogCancel>
+          <AlertDialogAction onClick={onClear}>
+            Vider le Top 50
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+});
+
+const TriButton = React.memo(function TriButton({
+  onClick,
+  sortMode,
+  sortDirection,
+  getSortIcon,
+  getSortTooltipText,
+}: {
+  onClick: () => void;
+  sortMode: "date" | "manual";
+  sortDirection: "asc" | "desc";
+  getSortIcon: () => ReactNode;
+  getSortTooltipText: () => string;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          onClick={onClick}
+          variant="ghost"
+          size="sm"
+          className="gap-1 text-muted-foreground hover:text-foreground"
+          aria-label={getSortTooltipText()}
+        >
+          {getSortIcon()}
+          <span className="text-xs">
+            {sortMode === "manual"
+              ? "Manuel"
+              : sortDirection === "desc"
+              ? "↓ Date"
+              : "↑ Date"}
+          </span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{getSortTooltipText()}</TooltipContent>
+    </Tooltip>
+  );
+});
+
+const TriManuelButton = React.memo(function TriManuelButton({
+  onClick,
+}: {
+  onClick: () => void;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          onClick={onClick}
+          variant="ghost"
+          size="sm"
+          className="gap-1 text-muted-foreground hover:text-foreground"
+          aria-label="Activer le tri manuel"
+        >
+          <Hand className="w-3 h-3" />
+          <span className="text-xs">Manuel</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Réorganiser manuellement</TooltipContent>
+    </Tooltip>
+  );
+});
+
+const PleinEcranButton = React.memo(function PleinEcranButton({
+  onClick,
+}: {
+  onClick: () => void;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          onClick={onClick}
+          variant="ghost"
+          size="sm"
+          className="gap-1 text-muted-foreground hover:text-foreground"
+          aria-label="Mode plein écran"
+        >
+          <Maximize className="w-3 h-3" />
+          <span className="text-xs">Plein écran</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>Mode plein écran</TooltipContent>
+    </Tooltip>
+  );
+});
