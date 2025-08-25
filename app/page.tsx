@@ -541,7 +541,7 @@ export default function MusicApp() {
           )}
 
           {/* Header simplifié - Titre à gauche */}
-          <div className="mb-2">
+          <div className="mb-2 mt-12 md:mt-0">
             <h1 className="text-2xl font-bold text-foreground">
               Mon Top 50 Albums
             </h1>
