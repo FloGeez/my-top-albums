@@ -21,7 +21,6 @@ export const MemoizedTop50Content = React.memo(function Top50Content({
   handleSortToggle,
   handleManualSortToggle,
   setIsFullscreen,
-  setIsShareDialogOpen,
   clearTop50,
   removeFromTop50,
   handleDragStart,
@@ -38,8 +37,9 @@ export const MemoizedTop50Content = React.memo(function Top50Content({
   sortDirection: "asc" | "desc";
   handleSortToggle: () => void;
   handleManualSortToggle: () => void;
-  setIsFullscreen: (value: boolean) => void;
+
   setIsShareDialogOpen: (value: boolean) => void;
+  setIsFullscreen: () => void;
   clearTop50: () => void;
   removeFromTop50: (albumId: string) => void;
   handleDragStart: (e: React.DragEvent, index: number) => void;
@@ -114,7 +114,7 @@ export const MemoizedTop50Content = React.memo(function Top50Content({
                     {/* Séparateur */}
                     <div className="w-px h-4 bg-border mx-2"></div>
 
-                    <PleinEcranButton onClick={() => setIsFullscreen(true)} />
+                    <PleinEcranButton onClick={setIsFullscreen} />
                   </TooltipProvider>
                 </div>
 

@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { SpotifyAuth } from "@/components/spotify-auth";
+import { BackupManagerDialog } from "@/components/backup-manager-dialog";
 import { type Album } from "@/lib/spotify";
 
 interface AppHeaderProps {
@@ -19,7 +20,6 @@ interface AppHeaderProps {
   sharedPlaylistId: string | null;
   isFromSharedLink: boolean | null;
   loadSharedPlaylist: (playlistId: string) => void;
-  setIsBackupDialogOpen: (open: boolean) => void;
   sharedData: Album[] | null;
   importSharedData: () => void;
   setSharedData: (data: Album[] | null) => void;
@@ -33,11 +33,11 @@ export function AppHeader({
   sharedPlaylistId,
   isFromSharedLink,
   loadSharedPlaylist,
-  setIsBackupDialogOpen,
   sharedData,
   importSharedData,
   setSharedData,
 }: AppHeaderProps) {
+  const [isBackupDialogOpen, setIsBackupDialogOpen] = React.useState(false);
   return (
     <div className="flex-shrink-0 p-4">
       <div className="max-w-7xl mx-auto">
@@ -154,6 +154,16 @@ export function AppHeader({
           </Alert>
         )}
       </div>
+
+      <BackupManagerDialog
+        isOpen={isBackupDialogOpen}
+        onClose={() => setIsBackupDialogOpen(false)}
+        onRestore={(albums) => {
+          // Cette fonction sera passée depuis le composant parent
+          console.log("Restore albums:", albums);
+        }}
+        currentAlbums={top50}
+      />
     </div>
   );
 }

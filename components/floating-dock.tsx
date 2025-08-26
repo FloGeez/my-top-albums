@@ -8,21 +8,27 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { SpotifySaveButton } from "@/components/spotify-save-button";
+import { ShareDialog } from "@/components/share-dialog";
+import { LoadSpotifyDialog } from "@/components/load-spotify-dialog";
 import { type Album } from "@/lib/spotify";
 
 interface FloatingDockProps {
   mounted: boolean;
   top50: Album[];
-  setIsShareDialogOpen: (open: boolean) => void;
-  handleLoadButton: () => void;
+  isAuthenticated: boolean;
+  onLoadOwnPlaylist: () => void;
+  onLogin: () => void;
 }
 
 export function FloatingDock({
   mounted,
   top50,
-  setIsShareDialogOpen,
-  handleLoadButton,
+  isAuthenticated,
+  onLoadOwnPlaylist,
+  onLogin,
 }: FloatingDockProps) {
+  const [isShareDialogOpen, setIsShareDialogOpen] = React.useState(false);
+  const [isLoadDialogOpen, setIsLoadDialogOpen] = React.useState(false);
   if (!mounted) return null;
 
   return (
@@ -59,7 +65,7 @@ export function FloatingDock({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  onClick={handleLoadButton}
+                  onClick={() => setIsLoadDialogOpen(true)}
                   variant="ghost"
                   size="icon"
                   className="text-muted-foreground hover:text-foreground hover:bg-accent"
@@ -72,6 +78,20 @@ export function FloatingDock({
           </div>
         </TooltipProvider>
       </div>
+
+      <ShareDialog
+        isOpen={isShareDialogOpen}
+        onClose={() => setIsShareDialogOpen(false)}
+        albums={top50}
+      />
+
+      <LoadSpotifyDialog
+        isOpen={isLoadDialogOpen}
+        onOpenChange={setIsLoadDialogOpen}
+        isAuthenticated={isAuthenticated}
+        onLoad={onLoadOwnPlaylist}
+        onLogin={onLogin}
+      />
     </div>
   );
 }

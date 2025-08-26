@@ -28,6 +28,10 @@ export { AppHeader } from "./app-header";
 export { FloatingDock } from "./floating-dock";
 export { LoadSpotifyDialog } from "./load-spotify-dialog";
 
+// Composants de vue
+export { MainView } from "./main-view";
+export { Top50PanelHeader } from "./top50-panel-header";
+
 // Composants existants
 export { ShareDialog } from "./share-dialog";
 export { SpotifyAuth } from "./spotify-auth";

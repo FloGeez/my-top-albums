@@ -47,7 +47,7 @@ Composants de chargement :
 
 Vue plein écran :
 
-- `FullscreenView` : Affichage plein écran du Top 50
+- `FullscreenView` : Affichage plein écran du Top 50 (utilisée par MainView)
 
 ### 📁 `components/app-header.tsx`
 
@@ -59,13 +59,25 @@ Header de l'application :
 
 Dock flottant :
 
-- `FloatingDock` : Dock flottant en bas avec les actions principales
+- `FloatingDock` : Dock flottant en bas avec les actions principales (inclut ShareDialog et LoadSpotifyDialog)
 
 ### 📁 `components/load-spotify-dialog.tsx`
 
 Modale de chargement :
 
-- `LoadSpotifyDialog` : Modale pour charger depuis Spotify
+- `LoadSpotifyDialog` : Modale pour charger depuis Spotify (utilisée par FloatingDock)
+
+### 📁 `components/main-view.tsx`
+
+Vue principale :
+
+- `MainView` : Interface principale gérant mobile et desktop (inclut FullscreenView)
+
+### 📁 `components/top50-panel-header.tsx`
+
+Header du panneau Top 50 :
+
+- `Top50PanelHeader` : Header avec contrôles pour le panneau Top 50
 
 ### 📁 `components/index.ts`
 
@@ -78,6 +90,9 @@ Fichier d'index pour exporter tous les composants
 3. **Maintenabilité** : Plus facile de modifier un composant spécifique
 4. **Lisibilité** : Le fichier principal est plus court et plus lisible
 5. **Testabilité** : Chaque composant peut être testé indépendamment
+6. **Encapsulation** : Les modales sont dans leurs composants respectifs
+7. **DRY** : Pas de duplication de code entre mobile et desktop
+8. **Composants autonomes** : Chaque composant gère ses propres modales et états
 
 ## Utilisation
 
@@ -106,8 +121,8 @@ Le fichier `app/page.tsx` est maintenant beaucoup plus court et se concentre uni
 ### Réduction de la taille
 
 - **Avant** : ~1053 lignes
-- **Après** : ~700 lignes (réduction de ~33%)
-- **Composants extraits** : 8 nouveaux composants modulaires
+- **Après** : ~450 lignes (réduction de ~57%)
+- **Composants extraits** : 9 nouveaux composants modulaires
 
 ## Prochaines étapes possibles
 
