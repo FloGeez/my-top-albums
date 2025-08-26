@@ -49,6 +49,24 @@ Vue plein écran :
 
 - `FullscreenView` : Affichage plein écran du Top 50
 
+### 📁 `components/app-header.tsx`
+
+Header de l'application :
+
+- `AppHeader` : Header avec titre, notifications et actions
+
+### 📁 `components/floating-dock.tsx`
+
+Dock flottant :
+
+- `FloatingDock` : Dock flottant en bas avec les actions principales
+
+### 📁 `components/load-spotify-dialog.tsx`
+
+Modale de chargement :
+
+- `LoadSpotifyDialog` : Modale pour charger depuis Spotify
+
 ### 📁 `components/index.ts`
 
 Fichier d'index pour exporter tous les composants
@@ -84,6 +102,12 @@ Le fichier `app/page.tsx` est maintenant beaucoup plus court et se concentre uni
 - La logique métier (state, effets, handlers)
 - L'orchestration des composants
 - La gestion des événements globaux
+
+### Réduction de la taille
+
+- **Avant** : ~1053 lignes
+- **Après** : ~700 lignes (réduction de ~33%)
+- **Composants extraits** : 8 nouveaux composants modulaires
 
 ## Prochaines étapes possibles
 

@@ -23,6 +23,11 @@ export {
 // Composants de vue
 export { FullscreenView } from "./fullscreen-view";
 
+// Composants d'interface
+export { AppHeader } from "./app-header";
+export { FloatingDock } from "./floating-dock";
+export { LoadSpotifyDialog } from "./load-spotify-dialog";
+
 // Composants existants
 export { ShareDialog } from "./share-dialog";
 export { SpotifyAuth } from "./spotify-auth";

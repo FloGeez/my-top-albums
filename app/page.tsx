@@ -78,6 +78,9 @@ import {
   SearchContentSkeleton,
 } from "@/components/skeletons";
 import { FullscreenView } from "@/components/fullscreen-view";
+import { AppHeader } from "@/components/app-header";
+import { FloatingDock } from "@/components/floating-dock";
+import { LoadSpotifyDialog } from "@/components/load-spotify-dialog";
 import {
   ViderButton,
   TriButton,
@@ -541,124 +544,19 @@ export default function MusicApp() {
   return (
     <div className="h-screen bg-background flex flex-col">
       {/* Header fixe */}
-      <div className="flex-shrink-0 p-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Notification discrète pour playlist partagée */}
-          {sharedPlaylistId && isFromSharedLink && top50.length === 0 && (
-            <div className="max-w-md mx-auto mb-4">
-              <Alert className="border-blue-200 bg-blue-50">
-                <Music className="h-4 w-4" />
-                <AlertDescription className="flex items-center justify-between">
-                  <span className="text-sm">Playlist partagée détectée</span>
-                  <Button
-                    onClick={() => loadSharedPlaylist(sharedPlaylistId)}
-                    size="sm"
-                    variant="outline"
-                    className="ml-2"
-                  >
-                    Charger
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            </div>
-          )}
-
-          {/* Header simplifié - Titre à gauche */}
-          <div className="mb-2 mt-12 md:mt-0">
-            <h1 className="text-2xl font-bold text-foreground">
-              Mon Top 50 Albums
-            </h1>
-            {top50.length > 0 && (
-              <p className="text-muted-foreground text-sm mt-1">
-                {top50.length} album{top50.length > 1 ? "s" : ""} dans votre
-                sélection
-              </p>
-            )}
-
-            {/* Indicateur de chargement subtil */}
-            {!mounted && (
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
-                <span>Chargement...</span>
-              </div>
-            )}
-          </div>
-
-          {/* Actions et paramètres - Barre d'outils discrète */}
-          <div
-            className="absolute top-4 right-4 flex items-center gap-1"
-            suppressHydrationWarning
-          >
-            {/* Outils secondaires */}
-            {mounted && (
-              <div className="flex items-center gap-1">
-                <TooltipProvider delayDuration={100}>
-                  {/* Sauvegardes */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => setIsBackupDialogOpen(true)}
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Historique et sauvegardes"
-                      >
-                        <Clock className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Historique et sauvegardes</TooltipContent>
-                  </Tooltip>
-
-                  {/* Thème */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() =>
-                      setTheme(theme === "light" ? "dark" : "light")
-                    }
-                    aria-label="Changer le thème"
-                    suppressHydrationWarning
-                  >
-                    {theme === "light" ? (
-                      <Moon className="w-4 h-4" />
-                    ) : (
-                      <Sun className="w-4 h-4" />
-                    )}
-                  </Button>
-                </TooltipProvider>
-              </div>
-            )}
-
-            {/* Compte Spotify */}
-            <SpotifyAuth />
-          </div>
-
-          {/* Alert pour les données partagées */}
-          {sharedData && (
-            <Alert className="mb-8 max-w-2xl mx-auto border-blue-200 bg-blue-50">
-              <Music className="h-4 w-4" />
-              <AlertDescription className="flex items-center justify-between">
-                <span>
-                  Un top {sharedData.length} a été partagé avec vous !
-                  Voulez-vous l'importer ?
-                </span>
-                <div className="flex gap-2 ml-4">
-                  <Button onClick={importSharedData} size="sm">
-                    Importer
-                  </Button>
-                  <Button
-                    onClick={() => setSharedData(null)}
-                    variant="outline"
-                    size="sm"
-                    className="bg-transparent"
-                  >
-                    Ignorer
-                  </Button>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-      </div>
+      <AppHeader
+        top50={top50}
+        mounted={mounted}
+        theme={theme}
+        setTheme={setTheme}
+        sharedPlaylistId={sharedPlaylistId}
+        isFromSharedLink={isFromSharedLink}
+        loadSharedPlaylist={loadSharedPlaylist}
+        setIsBackupDialogOpen={setIsBackupDialogOpen}
+        sharedData={sharedData}
+        importSharedData={importSharedData}
+        setSharedData={setSharedData}
+      />
 
       {/* Vue en panneaux (desktop uniquement) */}
 
@@ -917,55 +815,12 @@ export default function MusicApp() {
       </div>
 
       {/* Dock flottant en bas - Actions principales */}
-      {mounted && (
-        <div className="fixed bottom-1 left-1/2 transform -translate-x-1/2 z-40 p-2 pb-6 pt-0">
-          <div className="bg-background/95 backdrop-blur-sm border shadow-lg rounded-full px-4 py-2">
-            <TooltipProvider delayDuration={100}>
-              <div className="flex items-center gap-2">
-                {/* Sauvegarder */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="inline-block">
-                      <SpotifySaveButton albums={top50} variant="dock" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>Sauvegarder sur Spotify</TooltipContent>
-                </Tooltip>
-
-                {/* Partager */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setIsShareDialogOpen(true)}
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-foreground hover:bg-accent"
-                    >
-                      <Link className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Partager votre Top 50</TooltipContent>
-                </Tooltip>
-
-                {/* Charger */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={handleLoadButton}
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-foreground hover:bg-accent"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Charger depuis Spotify</TooltipContent>
-                </Tooltip>
-              </div>
-            </TooltipProvider>
-          </div>
-        </div>
-      )}
+      <FloatingDock
+        mounted={mounted}
+        top50={top50}
+        setIsShareDialogOpen={setIsShareDialogOpen}
+        handleLoadButton={handleLoadButton}
+      />
 
       <ShareDialog
         isOpen={isShareDialogOpen}
@@ -981,66 +836,26 @@ export default function MusicApp() {
       />
 
       {/* Modale de chargement depuis Spotify */}
-      <AlertDialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Charger depuis Spotify</AlertDialogTitle>
-            <AlertDialogDescription>
-              {isAuthenticated ? (
-                <div className="space-y-4">
-                  <p>
-                    Voulez-vous charger votre Top 50 depuis votre playlist
-                    Spotify ?
-                  </p>
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      Cette action remplacera votre Top 50 actuel par celui de
-                      votre playlist Spotify.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p>
-                    Pour charger votre Top 50 depuis Spotify, vous devez d'abord
-                    vous connecter.
-                  </p>
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      Vous serez redirigé vers Spotify pour autoriser l'accès à
-                      vos playlists.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (isAuthenticated) {
-                  toast({
-                    title: "Chargement en cours...",
-                    description: "Récupération de votre Top 50 depuis Spotify",
-                  });
-                  loadOwnPlaylist();
-                } else {
-                  toast({
-                    title: "Connexion requise",
-                    description:
-                      "Vous allez être redirigé vers Spotify pour vous connecter",
-                  });
-                  setTimeout(() => login(), 1000);
-                }
-                setIsLoadDialogOpen(false);
-              }}
-            >
-              {isAuthenticated ? "Charger" : "Se connecter"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <LoadSpotifyDialog
+        isOpen={isLoadDialogOpen}
+        onOpenChange={setIsLoadDialogOpen}
+        isAuthenticated={isAuthenticated}
+        onLoad={() => {
+          toast({
+            title: "Chargement en cours...",
+            description: "Récupération de votre Top 50 depuis Spotify",
+          });
+          loadOwnPlaylist();
+        }}
+        onLogin={() => {
+          toast({
+            title: "Connexion requise",
+            description:
+              "Vous allez être redirigé vers Spotify pour vous connecter",
+          });
+          setTimeout(() => login(), 1000);
+        }}
+      />
 
       {isFullscreen && (
         <FullscreenView top50={top50} onClose={() => setIsFullscreen(false)} />
