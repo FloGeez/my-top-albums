@@ -71,7 +71,7 @@ Modale de chargement :
 
 Vue principale :
 
-- `MainView` : Interface principale gérant mobile et desktop (inclut FullscreenView)
+- `MainView` : Interface principale gérant mobile et desktop (inclut FullscreenView, gestion locale des onglets et de la recherche)
 
 ### 📁 `components/top50-panel-header.tsx`
 
@@ -93,6 +93,7 @@ Fichier d'index pour exporter tous les composants
 6. **Encapsulation** : Les modales sont dans leurs composants respectifs
 7. **DRY** : Pas de duplication de code entre mobile et desktop
 8. **Composants autonomes** : Chaque composant gère ses propres modales et états
+9. **Encapsulation des états** : Les états locaux restent dans leurs composants respectifs
 
 ## Utilisation
 

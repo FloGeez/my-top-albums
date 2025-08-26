@@ -41,13 +41,7 @@ import { LoadSpotifyDialog } from "@/components/load-spotify-dialog";
 import { MainView } from "@/components/main-view";
 
 export default function MusicApp() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Album[]>([]);
   const [top50, setTop50] = useState<Album[]>([]);
-  const [activeTab, setActiveTab] = useState("top50");
-  // Suppression du state viewMode - on utilise uniquement les classes responsive Tailwind
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
 
   const [sharedData, setSharedData] = useState<Album[] | null>(null);
   const { toast } = useToast();
@@ -190,27 +184,21 @@ export default function MusicApp() {
 
   // Plus de chargement automatique - tout se fait sur demande maintenant
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      setHasSearched(true);
-      return;
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      return [];
     }
 
-    setIsLoading(true);
-    setHasSearched(true);
     try {
-      const results = await spotifyService.searchAlbums(searchQuery);
-      setSearchResults(results);
+      const results = await spotifyService.searchAlbums(query);
+      return results;
     } catch (error) {
       toast({
         title: "Erreur de recherche",
         description: "Impossible de rechercher les albums. Veuillez réessayer.",
         variant: "destructive",
       });
-      setSearchResults([]);
-    } finally {
-      setIsLoading(false);
+      return [];
     }
   };
 
@@ -509,15 +497,8 @@ export default function MusicApp() {
       <div className="flex-1 min-h-0 px-4 pb-14">
         <div className="max-w-7xl mx-auto h-full">
           <MainView
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
             mounted={mounted}
             top50={top50}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            isLoading={isLoading}
-            hasSearched={hasSearched}
-            searchResults={searchResults}
             handleSearch={handleSearch}
             addToTop50={addToTop50}
             removeFromTop50={removeFromTop50}

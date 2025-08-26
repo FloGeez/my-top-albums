@@ -19,23 +19,15 @@ import {
 import { type Album } from "@/lib/spotify";
 
 interface MainViewProps {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
   mounted: boolean;
   top50: Album[];
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  isLoading: boolean;
-  hasSearched: boolean;
-  searchResults: Album[];
-  handleSearch: () => void;
+  handleSearch: (query: string) => Promise<Album[]>;
   addToTop50: (album: Album) => void;
   removeFromTop50: (albumId: string) => void;
   sortMode: "date" | "manual";
   sortDirection: "asc" | "desc";
   handleSortToggle: () => void;
   handleManualSortToggle: () => void;
-
   clearTop50: () => void;
   handleDragStart: (e: React.DragEvent, index: number) => void;
   handleDragOver: (e: React.DragEvent) => void;
@@ -47,15 +39,8 @@ interface MainViewProps {
 }
 
 export function MainView({
-  activeTab,
-  setActiveTab,
   mounted,
   top50,
-  searchQuery,
-  setSearchQuery,
-  isLoading,
-  hasSearched,
-  searchResults,
   handleSearch,
   addToTop50,
   removeFromTop50,
@@ -72,7 +57,33 @@ export function MainView({
   getSortIcon,
   getSortTooltipText,
 }: MainViewProps) {
+  const [activeTab, setActiveTab] = React.useState("top50");
   const [isFullscreenOpen, setIsFullscreenOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [hasSearched, setHasSearched] = React.useState(false);
+  const [searchResults, setSearchResults] = React.useState<Album[]>([]);
+
+  // Fonction de recherche locale
+  const performSearch = async () => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setHasSearched(true);
+      return;
+    }
+
+    setIsLoading(true);
+    setHasSearched(true);
+    try {
+      const results = await handleSearch(searchQuery);
+      setSearchResults(results);
+    } catch (error) {
+      setSearchResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Props communes pour les composants de contenu
   const searchContentProps = {
     mounted,
@@ -81,7 +92,7 @@ export function MainView({
     isLoading,
     hasSearched,
     searchResults,
-    handleSearch,
+    handleSearch: performSearch,
     top50,
     addToTop50,
     removeFromTop50,

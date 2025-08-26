@@ -38,7 +38,6 @@ export const MemoizedTop50Content = React.memo(function Top50Content({
   handleSortToggle: () => void;
   handleManualSortToggle: () => void;
 
-  setIsShareDialogOpen: (value: boolean) => void;
   setIsFullscreen: () => void;
   clearTop50: () => void;
   removeFromTop50: (albumId: string) => void;
