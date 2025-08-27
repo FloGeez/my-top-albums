@@ -10,6 +10,7 @@ import {
   PleinEcranButton,
 } from "@/components/action-buttons";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useDragDrop } from "@/hooks/use-drag-drop";
 import { type Album } from "@/lib/spotify";
 
 // Composant pour le contenu du Top 50
@@ -23,11 +24,7 @@ export const MemoizedTop50Content = React.memo(function Top50Content({
   setIsFullscreen,
   clearTop50,
   removeFromTop50,
-  handleDragStart,
-  handleDragOver,
-  handleDrop,
-  handleDragEnd,
-  draggedItem,
+  onTop50Change,
   getSortIcon,
   getSortTooltipText,
 }: {
@@ -37,18 +34,29 @@ export const MemoizedTop50Content = React.memo(function Top50Content({
   sortDirection: "asc" | "desc";
   handleSortToggle: () => void;
   handleManualSortToggle: () => void;
-
   setIsFullscreen: () => void;
   clearTop50: () => void;
   removeFromTop50: (albumId: string) => void;
-  handleDragStart: (e: React.DragEvent, index: number) => void;
-  handleDragOver: (e: React.DragEvent) => void;
-  handleDrop: (e: React.DragEvent, dropIndex: number) => void;
-  handleDragEnd: () => void;
-  draggedItem: number | null;
+  onTop50Change: (newTop50: Album[]) => void;
   getSortIcon: () => ReactNode;
   getSortTooltipText: () => string;
 }) {
+  const { draggedItem, handleDragStart, handleDragOver, handleDragEnd } =
+    useDragDrop();
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+
+    if (draggedItem === null || sortMode !== "manual") return;
+
+    const newTop50 = [...top50];
+    const draggedAlbum = newTop50[draggedItem];
+
+    newTop50.splice(draggedItem, 1);
+    newTop50.splice(dropIndex, 0, draggedAlbum);
+
+    onTop50Change(newTop50);
+  };
   return (
     <div className="flex flex-col h-full">
       <div className="h-[calc(100vh-260px)] overflow-hidden">

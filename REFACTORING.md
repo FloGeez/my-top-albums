@@ -94,6 +94,8 @@ Fichier d'index pour exporter tous les composants
 7. **DRY** : Pas de duplication de code entre mobile et desktop
 8. **Composants autonomes** : Chaque composant gère ses propres modales et états
 9. **Encapsulation des états** : Les états locaux restent dans leurs composants respectifs
+10. **Hooks personnalisés** : Logique métier extraite dans des hooks réutilisables
+11. **Encapsulation complète** : La logique de tri et drag & drop est maintenant dans les composants qui les utilisent
 
 ## Utilisation
 
@@ -118,16 +120,51 @@ Le fichier `app/page.tsx` est maintenant beaucoup plus court et se concentre uni
 - La logique métier (state, effets, handlers)
 - L'orchestration des composants
 - La gestion des événements globaux
+- **Plus de logique de tri ou drag & drop** : Ces responsabilités sont maintenant dans les composants appropriés
 
 ### Réduction de la taille
 
 - **Avant** : ~1053 lignes
-- **Après** : ~450 lignes (réduction de ~57%)
+- **Après** : ~400 lignes (réduction de ~62%)
 - **Composants extraits** : 9 nouveaux composants modulaires
+- **Hooks créés** : 2 hooks personnalisés
+
+## Hooks personnalisés créés
+
+### 📁 `hooks/use-sort.tsx`
+
+Hook pour gérer la logique de tri :
+
+- `useSort()` : Gestion des modes de tri (date/manuel) et directions
+- `getSortIcon()` : Retourne l'icône appropriée selon le mode
+- `getSortTooltipText()` : Retourne le texte du tooltip
+
+### 📁 `hooks/use-drag-drop.ts`
+
+Hook pour gérer le drag & drop :
+
+- `useDragDrop()` : Gestion du drag & drop des albums
+- `draggedItem` : État de l'élément en cours de drag
+- `handleDragStart`, `handleDragOver`, `handleDrop`, `handleDragEnd` : Gestionnaires d'événements
+
+## Architecture finale optimisée
+
+### 🎯 Principe d'encapsulation respecté
+
+- **`Top50PanelHeader`** : Gère sa propre logique de tri avec `useSort()`
+- **`Top50Content`** : Gère sa propre logique de drag & drop avec `useDragDrop()`
+- **`page.tsx`** : Plus de logique de tri ou drag & drop, seulement l'orchestration
+
+### 📊 Résultats finaux
+
+- **Réduction de 62%** de la taille du fichier principal
+- **Logique encapsulée** dans les composants appropriés
+- **Hooks réutilisables** pour la logique métier
+- **Architecture modulaire** et maintenable
 
 ## Prochaines étapes possibles
 
-1. **Hooks personnalisés** : Extraire la logique métier dans des hooks
-2. **Context API** : Utiliser un contexte pour partager l'état
-3. **Types partagés** : Créer un fichier de types communs
-4. **Tests unitaires** : Ajouter des tests pour chaque composant
+1. **Context API** : Utiliser un contexte pour partager l'état
+2. **Types partagés** : Créer un fichier de types communs
+3. **Tests unitaires** : Ajouter des tests pour chaque composant
+4. **Hooks supplémentaires** : Extraire d'autres logiques métier

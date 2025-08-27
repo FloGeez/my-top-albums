@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Star, AlertTriangle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,32 +23,72 @@ import {
   TriManuelButton,
   PleinEcranButton,
 } from "@/components/action-buttons";
+import { useSort } from "@/hooks/use-sort";
+import { useToast } from "@/hooks/use-toast";
 import { type Album } from "@/lib/spotify";
 
 interface Top50PanelHeaderProps {
   top50: Album[];
-  sortMode: "date" | "manual";
-  sortDirection: "asc" | "desc";
-  handleSortToggle: () => void;
-  handleManualSortToggle: () => void;
-
   clearTop50: () => void;
   setIsFullscreen: () => void;
-  getSortIcon: () => React.ReactNode;
-  getSortTooltipText: () => string;
+  onTop50Change: (newTop50: Album[]) => void;
+  onSortModeChange: (sortMode: "date" | "manual") => void;
 }
 
 export function Top50PanelHeader({
   top50,
-  sortMode,
-  sortDirection,
-  handleSortToggle,
-  handleManualSortToggle,
-  setIsFullscreen,
   clearTop50,
-  getSortIcon,
-  getSortTooltipText,
+  setIsFullscreen,
+  onTop50Change,
+  onSortModeChange,
 }: Top50PanelHeaderProps) {
+  const { toast } = useToast();
+  const [sortMode, setSortMode] = useState<"date" | "manual">("date");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const { getSortIcon, getSortTooltipText } = useSort(sortMode, sortDirection);
+
+  const handleSortToggle = () => {
+    if (sortMode === "manual") {
+      setSortMode("date");
+      setSortDirection("desc");
+      const sortedTop50 = [...top50].sort((a, b) => b.year - a.year);
+      onTop50Change(sortedTop50);
+      onSortModeChange("date");
+      toast({
+        title: "Mode tri automatique activé",
+        description: "Albums triés par date de sortie (décroissant)",
+      });
+    } else {
+      const newDirection = sortDirection === "desc" ? "asc" : "desc";
+      setSortDirection(newDirection);
+      const sortedTop50 = [...top50].sort((a, b) =>
+        newDirection === "desc" ? b.year - a.year : a.year - b.year
+      );
+      onTop50Change(sortedTop50);
+      onSortModeChange("date");
+      toast({
+        title: `Tri par date ${
+          newDirection === "desc" ? "décroissant" : "croissant"
+        }`,
+        description: `Albums triés par date de sortie (${
+          newDirection === "desc"
+            ? "du plus récent au plus ancien"
+            : "du plus ancien au plus récent"
+        })`,
+      });
+    }
+  };
+
+  const handleManualSortToggle = () => {
+    if (sortMode === "date") {
+      setSortMode("manual");
+      onSortModeChange("manual");
+      toast({
+        title: "Mode tri manuel activé",
+        description: "Vous pouvez maintenant réorganiser manuellement",
+      });
+    }
+  };
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2">

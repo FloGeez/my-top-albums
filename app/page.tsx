@@ -1,43 +1,17 @@
 "use client";
 
-import React from "react";
-import type { ReactNode } from "react";
-
 import { useState, useEffect } from "react";
-import {
-  Music,
-  Clock,
-  Sun,
-  Moon,
-  RefreshCw,
-  Hand,
-  Calendar,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Hand, Calendar } from "lucide-react";
 
 import { useToast } from "@/hooks/use-toast";
 import { spotifyService, type Album } from "@/lib/spotify";
 import { BackupManager } from "@/lib/backup-manager";
 import { useTheme } from "next-themes";
 import { useSpotifyAuth } from "@/hooks/use-spotify-auth";
-import Image from "next/image";
 
 // Import des composants refactorisés
-import { ShareDialog } from "@/components/share-dialog";
-import { SpotifyAuth } from "@/components/spotify-auth";
-import { SpotifySaveButton } from "@/components/spotify-save-button";
-import { BackupManagerDialog } from "@/components/backup-manager-dialog";
-import { FullscreenView } from "@/components/fullscreen-view";
 import { AppHeader } from "@/components/app-header";
 import { FloatingDock } from "@/components/floating-dock";
-import { LoadSpotifyDialog } from "@/components/load-spotify-dialog";
 import { MainView } from "@/components/main-view";
 
 export default function MusicApp() {
@@ -45,9 +19,7 @@ export default function MusicApp() {
 
   const [sharedData, setSharedData] = useState<Album[] | null>(null);
   const { toast } = useToast();
-  const [sortMode, setSortMode] = useState<"date" | "manual">("date");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-  const [draggedItem, setDraggedItem] = useState<number | null>(null);
+
   const [manualOrder, setManualOrder] = useState<Album[]>([]);
   const [mounted, setMounted] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -56,9 +28,7 @@ export default function MusicApp() {
   const [isFromSharedLink, setIsFromSharedLink] = useState<boolean | null>(
     null
   );
-  const [isBackupDialogOpen, setIsBackupDialogOpen] = useState(false);
 
-  const [hasLoadedFromSpotify, setHasLoadedFromSpotify] = useState(false);
   const { theme, setTheme } = useTheme();
   const { isAuthenticated, login } = useSpotifyAuth();
 
@@ -227,22 +197,14 @@ export default function MusicApp() {
       });
     }
 
-    if (sortMode === "date") {
-      newTop50.sort((a, b) =>
-        sortDirection === "desc" ? b.year - a.year : a.year - b.year
-      );
-      setTop50(newTop50);
-    } else {
-      setTop50(newTop50);
-      setManualOrder(newTop50);
-    }
+    setTop50(newTop50);
+    setManualOrder(newTop50);
   };
 
   const importSharedData = () => {
     if (sharedData) {
       setTop50(sharedData);
       setManualOrder(sharedData);
-      setSortMode("manual");
       setSharedData(null);
       toast({
         title: "Albums importés !",
@@ -251,85 +213,10 @@ export default function MusicApp() {
     }
   };
 
-  const handleSortToggle = () => {
-    if (sortMode === "manual") {
-      setSortMode("date");
-      setSortDirection("desc");
-      const sortedTop50 = [...top50].sort((a, b) => b.year - a.year);
-      setTop50(sortedTop50);
-      toast({
-        title: "Mode tri automatique activé",
-        description: "Albums triés par date de sortie (décroissant)",
-      });
-    } else {
-      const newDirection = sortDirection === "desc" ? "asc" : "desc";
-      setSortDirection(newDirection);
-      const sortedTop50 = [...top50].sort((a, b) =>
-        newDirection === "desc" ? b.year - a.year : a.year - b.year
-      );
-      setTop50(sortedTop50);
-      toast({
-        title: `Tri par date ${
-          newDirection === "desc" ? "décroissant" : "croissant"
-        }`,
-        description: `Albums triés par date de sortie (${
-          newDirection === "desc"
-            ? "du plus récent au plus ancien"
-            : "du plus ancien au plus récent"
-        })`,
-      });
-    }
-  };
-
-  const handleManualSortToggle = () => {
-    if (sortMode === "date") {
-      setSortMode("manual");
-      if (manualOrder.length > 0 && manualOrder.length === top50.length) {
-        setTop50(manualOrder);
-      }
-      toast({
-        title: "Mode tri manuel activé",
-        description: "Vous pouvez maintenant réorganiser manuellement",
-      });
-    }
-  };
-
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedItem(index);
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-    e.preventDefault();
-
-    if (draggedItem === null || sortMode !== "manual") return;
-
-    const newTop50 = [...top50];
-    const draggedAlbum = newTop50[draggedItem];
-
-    newTop50.splice(draggedItem, 1);
-    newTop50.splice(dropIndex, 0, draggedAlbum);
-
-    setTop50(newTop50);
-    setManualOrder(newTop50);
-    setDraggedItem(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedItem(null);
-  };
-
   const removeFromTop50 = (albumId: string) => {
     const newTop50 = top50.filter((album) => album.id !== albumId);
     setTop50(newTop50);
-    if (sortMode === "manual") {
-      setManualOrder(newTop50);
-    }
+    setManualOrder(newTop50);
     toast({
       title: "Album retiré",
       description: "L'album a été retiré de votre top 50",
@@ -352,28 +239,6 @@ export default function MusicApp() {
       title: "Top 50 vidé !",
       description: "Tous les albums ont été supprimés de votre top.",
     });
-  };
-
-  const getSortIcon = () => {
-    if (sortMode === "manual") {
-      return <Hand className="w-3 h-3" />;
-    } else {
-      return sortDirection === "desc" ? (
-        <Calendar className="w-3 h-3" />
-      ) : (
-        <Calendar className="w-3 h-3" />
-      );
-    }
-  };
-
-  const getSortTooltipText = () => {
-    if (sortMode === "manual") {
-      return "Activer le tri par date (décroissant)";
-    } else {
-      return sortDirection === "desc"
-        ? "Trier par date (croissant)"
-        : "Trier par date (décroissant)";
-    }
   };
 
   // Fonction utilitaire pour charger une playlist et mettre à jour l'état
@@ -428,7 +293,6 @@ export default function MusicApp() {
 
         // Pas de mise à jour d'URL pour notre propre playlist
         setIsFromSharedLink(false);
-        setHasLoadedFromSpotify(true);
       } else {
         toast({
           title: "Aucune playlist trouvée",
@@ -452,7 +316,6 @@ export default function MusicApp() {
       console.log("🎵 [LOAD-SHARED] Loading shared playlist:", playlistId);
 
       const albumsCount = await loadPlaylistAndUpdateState(playlistId, false);
-      setHasLoadedFromSpotify(true);
     } catch (error) {
       console.error("Error loading shared playlist:", error);
       toast({
@@ -467,12 +330,6 @@ export default function MusicApp() {
   const handleRestoreBackup = (albums: Album[]) => {
     setTop50(albums);
     setManualOrder(albums);
-    setSortMode("manual");
-  };
-
-  // Fonction pour réinitialiser l'état de chargement
-  const resetLoadState = () => {
-    setHasLoadedFromSpotify(false);
   };
 
   return (
@@ -502,18 +359,11 @@ export default function MusicApp() {
             handleSearch={handleSearch}
             addToTop50={addToTop50}
             removeFromTop50={removeFromTop50}
-            sortMode={sortMode}
-            sortDirection={sortDirection}
-            handleSortToggle={handleSortToggle}
-            handleManualSortToggle={handleManualSortToggle}
             clearTop50={clearTop50}
-            handleDragStart={handleDragStart}
-            handleDragOver={handleDragOver}
-            handleDrop={handleDrop}
-            handleDragEnd={handleDragEnd}
-            draggedItem={draggedItem}
-            getSortIcon={getSortIcon}
-            getSortTooltipText={getSortTooltipText}
+            onTop50Change={(newTop50) => {
+              setTop50(newTop50);
+              setManualOrder(newTop50);
+            }}
           />
         </div>
       </div>

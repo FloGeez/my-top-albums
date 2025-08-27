@@ -24,18 +24,8 @@ interface MainViewProps {
   handleSearch: (query: string) => Promise<Album[]>;
   addToTop50: (album: Album) => void;
   removeFromTop50: (albumId: string) => void;
-  sortMode: "date" | "manual";
-  sortDirection: "asc" | "desc";
-  handleSortToggle: () => void;
-  handleManualSortToggle: () => void;
   clearTop50: () => void;
-  handleDragStart: (e: React.DragEvent, index: number) => void;
-  handleDragOver: (e: React.DragEvent) => void;
-  handleDrop: (e: React.DragEvent, dropIndex: number) => void;
-  handleDragEnd: () => void;
-  draggedItem: number | null;
-  getSortIcon: () => React.ReactNode;
-  getSortTooltipText: () => string;
+  onTop50Change: (newTop50: Album[]) => void;
 }
 
 export function MainView({
@@ -44,18 +34,8 @@ export function MainView({
   handleSearch,
   addToTop50,
   removeFromTop50,
-  sortMode,
-  sortDirection,
-  handleSortToggle,
-  handleManualSortToggle,
   clearTop50,
-  handleDragStart,
-  handleDragOver,
-  handleDrop,
-  handleDragEnd,
-  draggedItem,
-  getSortIcon,
-  getSortTooltipText,
+  onTop50Change,
 }: MainViewProps) {
   const [activeTab, setActiveTab] = React.useState("top50");
   const [isFullscreenOpen, setIsFullscreenOpen] = React.useState(false);
@@ -63,6 +43,7 @@ export function MainView({
   const [isLoading, setIsLoading] = React.useState(false);
   const [hasSearched, setHasSearched] = React.useState(false);
   const [searchResults, setSearchResults] = React.useState<Album[]>([]);
+  const [sortMode, setSortMode] = React.useState<"date" | "manual">("date");
 
   // Fonction de recherche locale
   const performSearch = async () => {
@@ -102,19 +83,15 @@ export function MainView({
     top50,
     setActiveTab,
     sortMode,
-    sortDirection,
-    handleSortToggle,
-    handleManualSortToggle,
+    sortDirection: "desc" as const,
+    handleSortToggle: () => {},
+    handleManualSortToggle: () => {},
     setIsFullscreen: () => setIsFullscreenOpen(true),
     clearTop50,
     removeFromTop50,
-    handleDragStart,
-    handleDragOver,
-    handleDrop,
-    handleDragEnd,
-    draggedItem,
-    getSortIcon,
-    getSortTooltipText,
+    onTop50Change,
+    getSortIcon: () => null,
+    getSortTooltipText: () => "",
   };
 
   return (
@@ -210,14 +187,10 @@ export function MainView({
             <div className="p-6 flex-1">
               <Top50PanelHeader
                 top50={top50}
-                sortMode={sortMode}
-                sortDirection={sortDirection}
-                handleSortToggle={handleSortToggle}
-                handleManualSortToggle={handleManualSortToggle}
                 clearTop50={clearTop50}
                 setIsFullscreen={() => setIsFullscreenOpen(true)}
-                getSortIcon={getSortIcon}
-                getSortTooltipText={getSortTooltipText}
+                onTop50Change={onTop50Change}
+                onSortModeChange={setSortMode}
               />
               <div className="h-full p-1 flex flex-col">
                 {!mounted ? (
