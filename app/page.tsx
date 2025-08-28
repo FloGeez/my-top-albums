@@ -32,6 +32,8 @@ import {
   Sparkles,
   HeartHandshake,
   RefreshCw,
+  MoreVertical,
+  Share2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -51,12 +53,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
@@ -64,6 +74,7 @@ import { spotifyService, type Album } from "@/lib/spotify";
 import { ShareDialog } from "@/components/share-dialog";
 import { SpotifyAuth } from "@/components/spotify-auth";
 import { SpotifySaveButton } from "@/components/spotify-save-button";
+import { SpotifyLoadButton } from "@/components/spotify-load-button";
 import { BackupManagerDialog } from "@/components/backup-manager-dialog";
 import { BackupManager } from "@/lib/backup-manager";
 import { useTheme } from "next-themes";
@@ -93,7 +104,6 @@ export default function MusicApp() {
     null
   );
   const [isBackupDialogOpen, setIsBackupDialogOpen] = useState(false);
-  const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
   const [hasLoadedFromSpotify, setHasLoadedFromSpotify] = useState(false);
   const { theme, setTheme } = useTheme();
   const { isAuthenticated, login } = useSpotifyAuth();
@@ -443,56 +453,6 @@ export default function MusicApp() {
     }
   };
 
-  // Fonction pour charger sa propre playlist
-  const loadOwnPlaylist = async () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Non connecté",
-        description: "Connectez-vous à Spotify pour charger votre playlist",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      console.log("🎵 [LOAD-OWN] Loading own playlist...");
-
-      // Chercher la playlist existante de l'utilisateur
-      const existingPlaylist = await spotifyService.findExistingTopPlaylist([]);
-
-      if (existingPlaylist) {
-        console.log("🎵 [LOAD-OWN] Found own playlist:", existingPlaylist.id);
-
-        const albumsCount = await loadPlaylistAndUpdateState(
-          existingPlaylist.id,
-          true
-        );
-
-        // Pas de mise à jour d'URL pour notre propre playlist
-        setIsFromSharedLink(false);
-        setHasLoadedFromSpotify(true);
-      } else {
-        toast({
-          title: "Aucune playlist trouvée",
-          description: "Vous n'avez pas encore de playlist Top 50",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error loading own playlist:", error);
-      toast({
-        title: "Erreur de chargement",
-        description: "Impossible de charger votre playlist",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Fonction pour gérer le bouton de chargement (ouvrir la modale)
-  const handleLoadButton = () => {
-    setIsLoadDialogOpen(true);
-  };
-
   // Fonction pour charger une playlist partagée
   const loadSharedPlaylist = async (playlistId: string) => {
     try {
@@ -548,7 +508,7 @@ export default function MusicApp() {
           )}
 
           {/* Header simplifié - Titre à gauche */}
-          <div className="mb-2 mt-12 md:mt-0">
+          <div className="mb-2">
             <h1 className="text-2xl font-bold text-foreground">
               Mon Top 50 Albums
             </h1>
@@ -566,6 +526,19 @@ export default function MusicApp() {
                 <span>Chargement...</span>
               </div>
             )}
+
+            {/* Bouton de chargement depuis Spotify */}
+            {mounted && (
+              <div className="mt-4">
+                <SpotifyLoadButton
+                  onLoad={(loadedAlbums) => {
+                    setTop50(loadedAlbums);
+                    setManualOrder(loadedAlbums);
+                    setSortMode("manual");
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Actions et paramètres - Barre d'outils discrète */}
@@ -573,33 +546,43 @@ export default function MusicApp() {
             className="absolute top-4 right-4 flex items-center gap-1"
             suppressHydrationWarning
           >
-            {/* Outils secondaires */}
+            {/* Menu principal */}
             {mounted && (
-              <div className="flex items-center gap-1">
-                <TooltipProvider delayDuration={100}>
-                  {/* Sauvegardes */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => setIsBackupDialogOpen(true)}
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Historique et sauvegardes"
-                      >
-                        <Clock className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Historique et sauvegardes</TooltipContent>
-                  </Tooltip>
-
-                  {/* Thème */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="text-muted-foreground hover:text-foreground"
+                    aria-label="Menu principal"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {/* Connexion Spotify */}
+                  <div className="px-2 py-1.5">
+                    <SpotifyAuth />
+                  </div>
+
+                  <DropdownMenuSeparator />
+                  {/* Sauvegardes */}
+                  <DropdownMenuItem
+                    onClick={() => setIsBackupDialogOpen(true)}
+                    className="gap-2"
+                  >
+                    <Clock className="w-4 h-4" />
+                    Historique et sauvegardes
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  {/* Thème */}
+                  <DropdownMenuItem
                     onClick={() =>
                       setTheme(theme === "light" ? "dark" : "light")
                     }
-                    aria-label="Changer le thème"
+                    className="gap-2"
                     suppressHydrationWarning
                   >
                     {theme === "light" ? (
@@ -607,13 +590,11 @@ export default function MusicApp() {
                     ) : (
                       <Sun className="w-4 h-4" />
                     )}
-                  </Button>
-                </TooltipProvider>
-              </div>
+                    {theme === "light" ? "Mode sombre" : "Mode clair"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-
-            {/* Compte Spotify */}
-            <SpotifyAuth />
           </div>
 
           {/* Alert pour les données partagées */}
@@ -737,6 +718,9 @@ export default function MusicApp() {
                           draggedItem={draggedItem}
                           getSortIcon={getSortIcon}
                           getSortTooltipText={getSortTooltipText}
+                          setTop50={setTop50}
+                          setManualOrder={setManualOrder}
+                          setSortMode={setSortMode}
                         />
                       )}
                     </div>
@@ -890,6 +874,9 @@ export default function MusicApp() {
                         draggedItem={draggedItem}
                         getSortIcon={getSortIcon}
                         getSortTooltipText={getSortTooltipText}
+                        setTop50={setTop50}
+                        setManualOrder={setManualOrder}
+                        setSortMode={setSortMode}
                       />
                     )}
                   </div>
@@ -925,25 +912,10 @@ export default function MusicApp() {
                       size="icon"
                       className="text-muted-foreground hover:text-foreground hover:bg-accent"
                     >
-                      <Link className="w-4 h-4" />
+                      <Share2 className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>Partager votre Top 50</TooltipContent>
-                </Tooltip>
-
-                {/* Charger */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={handleLoadButton}
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-foreground hover:bg-accent"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Charger depuis Spotify</TooltipContent>
                 </Tooltip>
               </div>
             </TooltipProvider>
@@ -965,66 +937,6 @@ export default function MusicApp() {
       />
 
       {/* Modale de chargement depuis Spotify */}
-      <AlertDialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Charger depuis Spotify</AlertDialogTitle>
-            <AlertDialogDescription>
-              {isAuthenticated ? (
-                <div className="space-y-4">
-                  <p>
-                    Voulez-vous charger votre Top 50 depuis votre playlist
-                    Spotify ?
-                  </p>
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      Cette action remplacera votre Top 50 actuel par celui de
-                      votre playlist Spotify.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p>
-                    Pour charger votre Top 50 depuis Spotify, vous devez d'abord
-                    vous connecter.
-                  </p>
-                  <div className="bg-muted/50 p-3 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      Vous serez redirigé vers Spotify pour autoriser l'accès à
-                      vos playlists.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (isAuthenticated) {
-                  toast({
-                    title: "Chargement en cours...",
-                    description: "Récupération de votre Top 50 depuis Spotify",
-                  });
-                  loadOwnPlaylist();
-                } else {
-                  toast({
-                    title: "Connexion requise",
-                    description:
-                      "Vous allez être redirigé vers Spotify pour vous connecter",
-                  });
-                  setTimeout(() => login(), 1000);
-                }
-                setIsLoadDialogOpen(false);
-              }}
-            >
-              {isAuthenticated ? "Charger" : "Se connecter"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {isFullscreen && (
         <FullscreenView top50={top50} onClose={() => setIsFullscreen(false)} />
@@ -1148,6 +1060,9 @@ const MemoizedTop50Content = React.memo(function Top50Content({
   draggedItem,
   getSortIcon,
   getSortTooltipText,
+  setTop50,
+  setManualOrder,
+  setSortMode,
 }: {
   top50: Album[];
   setActiveTab: (tab: string) => void;
@@ -1166,6 +1081,9 @@ const MemoizedTop50Content = React.memo(function Top50Content({
   draggedItem: number | null;
   getSortIcon: () => ReactNode;
   getSortTooltipText: () => string;
+  setTop50: (albums: Album[]) => void;
+  setManualOrder: (albums: Album[]) => void;
+  setSortMode: (mode: "date" | "manual") => void;
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -1201,8 +1119,22 @@ const MemoizedTop50Content = React.memo(function Top50Content({
                 {/* Instructions desktop */}
                 <div className="hidden md:block">
                   <p className="text-sm text-muted-foreground opacity-75">
-                    Utilisez le panneau de recherche pour commencer →
+                    ← Utilisez le panneau de recherche pour commencer
                   </p>
+                </div>
+
+                {/* Bouton de chargement pour les utilisateurs qui ont déjà un Top 50 */}
+                <div className="mt-8">
+                  <div className="text-center">
+                    <SpotifyLoadButton
+                      onLoad={(loadedAlbums) => {
+                        setTop50(loadedAlbums);
+                        setManualOrder(loadedAlbums);
+                        setSortMode("manual");
+                      }}
+                      borderless={true}
+                    />
+                  </div>
                 </div>
               </div>
             ) : (

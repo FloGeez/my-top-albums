@@ -157,8 +157,6 @@ export function SpotifySaveButton({
             <RefreshCw className="w-4 h-4 animate-spin" />
           ) : isCheckingPlaylist ? (
             <RefreshCw className="w-4 h-4 animate-spin" />
-          ) : isAuthenticated && existingPlaylist ? (
-            <Upload className="w-4 h-4" />
           ) : (
             <Save className="w-4 h-4" />
           )}
